@@ -14,7 +14,276 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      calendar: {
+        Row: {
+          channel: string | null
+          content: string
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          platform: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          channel?: string | null
+          content: string
+          created_at?: string
+          date: string
+          id?: string
+          notes?: string | null
+          platform?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: string | null
+          content?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          platform?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      channels: {
+        Row: {
+          brand: string
+          category: string
+          created_at: string
+          id: string
+          link: string | null
+          notes: string | null
+          platform: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand: string
+          category: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          notes?: string | null
+          platform: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          category?: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          notes?: string | null
+          platform?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      growth: {
+        Row: {
+          channel: string | null
+          created_at: string
+          date: string
+          followers: number
+          id: string
+          platform: string | null
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string
+          date?: string
+          followers?: number
+          id?: string
+          platform?: string | null
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string
+          date?: string
+          followers?: number
+          id?: string
+          platform?: string | null
+        }
+        Relationships: []
+      }
+      ideas: {
+        Row: {
+          category: string | null
+          channel: string | null
+          content_type: string | null
+          created_at: string
+          hook: string | null
+          id: string
+          idea: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          channel?: string | null
+          content_type?: string | null
+          created_at?: string
+          hook?: string | null
+          id?: string
+          idea: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          channel?: string | null
+          content_type?: string | null
+          created_at?: string
+          hook?: string | null
+          id?: string
+          idea?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pipeline: {
+        Row: {
+          channel: string | null
+          created_at: string
+          date: string
+          format: string | null
+          hook: string | null
+          id: string
+          idea: string
+          notes: string | null
+          pillar: string | null
+          platform: string | null
+          posted_link: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string
+          date?: string
+          format?: string | null
+          hook?: string | null
+          id?: string
+          idea: string
+          notes?: string | null
+          pillar?: string | null
+          platform?: string | null
+          posted_link?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string
+          date?: string
+          format?: string | null
+          hook?: string | null
+          id?: string
+          idea?: string
+          notes?: string | null
+          pillar?: string | null
+          platform?: string | null
+          posted_link?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          channel: string | null
+          comments: number
+          content_type: string | null
+          created_at: string
+          date: string
+          id: string
+          likes: number
+          platform: string | null
+          post_link: string | null
+          saves: number
+          shares: number
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          channel?: string | null
+          comments?: number
+          content_type?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          likes?: number
+          platform?: string | null
+          post_link?: string | null
+          saves?: number
+          shares?: number
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          channel?: string | null
+          comments?: number
+          content_type?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          likes?: number
+          platform?: string | null
+          post_link?: string | null
+          saves?: number
+          shares?: number
+          updated_at?: string
+          views?: number
+        }
+        Relationships: []
+      }
+      repurposing: {
+        Row: {
+          created_at: string
+          id: string
+          link: string | null
+          new_format: string | null
+          notes: string | null
+          original_post: string
+          source_platform: string | null
+          status: string
+          target_platform: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          new_format?: string | null
+          notes?: string | null
+          original_post: string
+          source_platform?: string | null
+          status?: string
+          target_platform?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          new_format?: string | null
+          notes?: string | null
+          original_post?: string
+          source_platform?: string | null
+          status?: string
+          target_platform?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
