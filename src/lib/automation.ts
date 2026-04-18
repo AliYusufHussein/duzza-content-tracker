@@ -14,8 +14,8 @@ export const STATUS_WEIGHT: Record<string, number> = {
 
 export const PIPELINE_STATUSES = ['Idea', 'Drafting', 'Scheduled', 'Posted', 'Repurposed'] as const;
 export const IDEA_STATUSES = ['Raw', 'Refined', 'In Pipeline', 'Used'] as const;
-export const PLATFORMS = ['Telegram', 'X (Twitter)', 'Blog', 'YouTube', 'Instagram'] as const;
-export const PILLARS = ['Finance', 'Education', 'Tech', 'Community', 'Music', 'Writing'] as const;
+export const PLATFORMS = ['Telegram', 'X (Twitter)', 'Blog', 'YouTube', 'Instagram', 'WhatsApp'] as const;
+export const PILLARS = ['Finance', 'Education', 'Tech', 'Community', 'Music', 'Writing', 'Business'] as const;
 export const FORMATS = ['Video', 'Carousel', 'Text', 'Thread'] as const;
 
 export function priorityScore(p: { pillar?: string | null; format?: string | null; status?: string | null }) {
