@@ -13,7 +13,36 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+      },
+      backgroundImage: {
+        'gradient-primary': 'var(--gradient-primary)',
+        'gradient-surface': 'var(--gradient-surface)',
+      },
+      boxShadow: {
+        elegant: 'var(--shadow-elegant)',
+        card: 'var(--shadow-card)',
+      },
       colors: {
+        status: {
+          idea: 'hsl(var(--status-idea))',
+          drafting: 'hsl(var(--status-drafting))',
+          scheduled: 'hsl(var(--status-scheduled))',
+          posted: 'hsl(var(--status-posted))',
+          repurposed: 'hsl(var(--status-repurposed))',
+        },
+        tier: {
+          viral: 'hsl(var(--tier-viral))',
+          good: 'hsl(var(--tier-good))',
+          low: 'hsl(var(--tier-low))',
+        },
+        trend: {
+          up: 'hsl(var(--trend-up))',
+          flat: 'hsl(var(--trend-flat))',
+          down: 'hsl(var(--trend-down))',
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
