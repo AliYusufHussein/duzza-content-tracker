@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTable } from '@/hooks/useTable';
 import { PageHeader } from '@/components/PageHeader';
@@ -6,30 +6,73 @@ import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { RecordDialog, FieldDef } from '@/components/RecordDialog';
 import { Button } from '@/components/ui/button';
-import { Trash2, Clock } from 'lucide-react';
+import { Trash2, Clock, Upload, Download } from 'lucide-react';
 import { PLATFORMS, suggestedPostTime } from '@/lib/automation';
 import { toast } from 'sonner';
 import { format, parseISO, startOfWeek, addDays, isSameDay } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const STATUSES = ['Planned', 'Scheduled', 'Posted', 'Skipped'];
+
+// Minimal CSV parser supporting quoted fields and commas inside quotes
+function parseCSV(text: string): Record<string, string>[] {
+  const rows: string[][] = [];
+  let cur: string[] = [];
+  let field = '';
+  let inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else field += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ',') { cur.push(field); field = ''; }
+      else if (c === '\n') { cur.push(field); rows.push(cur); cur = []; field = ''; }
+      else if (c === '\r') { /* skip */ }
+      else field += c;
+    }
+  }
+  if (field.length || cur.length) { cur.push(field); rows.push(cur); }
+  const [header, ...rest] = rows.filter(r => r.some(v => v.trim() !== ''));
+  if (!header) return [];
+  const keys = header.map(h => h.trim().toLowerCase());
+  return rest.map(r => Object.fromEntries(keys.map((k, i) => [k, (r[i] ?? '').trim()])));
+}
 
 export default function CalendarPage() {
   const { rows, refresh } = useTable<any>('calendar', 'date', true);
   const { rows: channels } = useTable<any>('channels');
+  const [filterChannel, setFilterChannel] = useState<string>('all');
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const channelOptions = useMemo(
     () => Array.from(new Set(channels.map(c => c.brand))).filter(Boolean) as string[],
     [channels]
   );
 
+  // Platforms valid for the selected channel (for dialog + CSV adjustment)
+  const platformsForFilter = useMemo(() => {
+    if (filterChannel === 'all') return PLATFORMS as readonly string[];
+    return Array.from(new Set(
+      channels.filter(c => c.brand === filterChannel).map(c => c.platform)
+    )) as string[];
+  }, [channels, filterChannel]);
+
   const fields: FieldDef[] = [
     { name: 'date', label: 'Date', type: 'date', required: true, defaultValue: new Date().toISOString().slice(0, 10) },
-    { name: 'channel', label: 'Channel', type: 'select', options: channelOptions },
-    { name: 'platform', label: 'Platform', type: 'select', options: PLATFORMS as any },
+    { name: 'channel', label: 'Channel', type: 'select', options: channelOptions, defaultValue: filterChannel === 'all' ? '' : filterChannel },
+    { name: 'platform', label: 'Platform', type: 'select', options: platformsForFilter as any },
     { name: 'content', label: 'Content', type: 'textarea', required: true },
     { name: 'status', label: 'Status', type: 'select', options: STATUSES, defaultValue: 'Planned' },
     { name: 'notes', label: 'Notes', type: 'textarea' },
   ];
+
+  const visibleRows = useMemo(
+    () => filterChannel === 'all' ? rows : rows.filter(r => r.channel === filterChannel),
+    [rows, filterChannel]
+  );
 
   const today = new Date();
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
@@ -37,7 +80,7 @@ export default function CalendarPage() {
 
   const byDay = useMemo(() => {
     const map = new Map<string, any[]>();
-    rows.forEach(r => {
+    visibleRows.forEach(r => {
       try {
         const d = parseISO(r.date);
         const key = format(d, 'yyyy-MM-dd');
@@ -46,7 +89,7 @@ export default function CalendarPage() {
       } catch {}
     });
     return map;
-  }, [rows]);
+  }, [visibleRows]);
 
   const create = async (v: any) => {
     const { error } = await supabase.from('calendar').insert(v);
@@ -57,6 +100,56 @@ export default function CalendarPage() {
     if (error) toast.error(error.message); else refresh();
   };
 
+  const downloadTemplate = () => {
+    const sample = filterChannel !== 'all' ? filterChannel : (channelOptions[0] ?? 'BrandName');
+    const csv = [
+      'date,channel,platform,content,status,notes',
+      `${new Date().toISOString().slice(0, 10)},${sample},Telegram,"Sample post — replace with your content",Planned,`,
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'calendar-template.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleUpload = async (file: File) => {
+    const text = await file.text();
+    const parsed = parseCSV(text);
+    if (!parsed.length) { toast.error('No rows found in CSV'); return; }
+
+    const validStatuses = new Set(STATUSES);
+    const targetChannel = filterChannel === 'all' ? null : filterChannel;
+    const allowedPlatformsForChannel = targetChannel
+      ? new Set(channels.filter(c => c.brand === targetChannel).map(c => c.platform))
+      : null;
+
+    const records: any[] = [];
+    const adjustments: string[] = [];
+    parsed.forEach((row, idx) => {
+      const date = row.date;
+      const content = row.content;
+      if (!date || !content) { adjustments.push(`Row ${idx + 2}: missing date or content (skipped)`); return; }
+      const channel = targetChannel ?? row.channel ?? null;
+      let platform = row.platform || null;
+      // Auto-adjust: if platform isn't valid for the locked channel, swap to first available
+      if (allowedPlatformsForChannel && platform && !allowedPlatformsForChannel.has(platform)) {
+        const fallback = Array.from(allowedPlatformsForChannel)[0] ?? null;
+        adjustments.push(`Row ${idx + 2}: "${platform}" not on ${channel} → "${fallback}"`);
+        platform = fallback;
+      }
+      const status = validStatuses.has(row.status) ? row.status : 'Planned';
+      records.push({ date, channel, platform, content, status, notes: row.notes || null });
+    });
+
+    if (!records.length) { toast.error('No valid rows. ' + (adjustments[0] ?? '')); return; }
+    const { error } = await supabase.from('calendar').insert(records);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Imported ${records.length} post${records.length !== 1 ? 's' : ''}${adjustments.length ? ` · ${adjustments.length} adjusted` : ''}`);
+    if (adjustments.length) console.warn('CSV import notes:', adjustments);
+    refresh();
+  };
+
   return (
     <>
       <PageHeader
@@ -64,6 +157,40 @@ export default function CalendarPage() {
         subtitle={`Week of ${format(weekStart, 'MMM d')}. Posting times auto-suggested per platform: X 12:00 · IG 18:00 · Telegram 20:00.`}
         action={<RecordDialog title="Schedule content" fields={fields} onSubmit={create} />}
       />
+
+      <Card className="surface-card p-3 mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground mr-1">Channel</span>
+        <Select value={filterChannel} onValueChange={setFilterChannel}>
+          <SelectTrigger className="h-8 w-[220px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All channels</SelectItem>
+            {channelOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {filterChannel !== 'all' && (
+          <span className="text-[11px] font-mono text-muted-foreground hidden sm:inline">
+            platforms: {platformsForFilter.join(' · ') || '—'}
+          </span>
+        )}
+        <div className="flex-1" />
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={e => {
+            const f = e.target.files?.[0];
+            if (f) handleUpload(f).finally(() => { if (fileRef.current) fileRef.current.value = ''; });
+          }}
+        />
+        <Button size="sm" variant="outline" className="h-8" onClick={downloadTemplate}>
+          <Download className="h-3.5 w-3.5 mr-1.5" />Template
+        </Button>
+        <Button size="sm" variant="outline" className="h-8" onClick={() => fileRef.current?.click()}>
+          <Upload className="h-3.5 w-3.5 mr-1.5" />
+          Upload CSV{filterChannel !== 'all' ? ` → ${filterChannel}` : ''}
+        </Button>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-7 gap-2 mb-6">
         {days.map(d => {
@@ -99,7 +226,9 @@ export default function CalendarPage() {
       </div>
 
       <Card className="surface-card overflow-hidden">
-        <div className="px-4 py-3 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">All scheduled</div>
+        <div className="px-4 py-3 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+          All scheduled {filterChannel !== 'all' && <span className="text-foreground/80">· {filterChannel}</span>}
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -114,8 +243,8 @@ export default function CalendarPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 && <tr><td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">Nothing scheduled yet.</td></tr>}
-              {rows.map(r => (
+              {visibleRows.length === 0 && <tr><td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">Nothing scheduled yet.</td></tr>}
+              {visibleRows.map(r => (
                 <tr key={r.id} className="border-b border-border/60 hover:bg-secondary/40">
                   <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">{r.date}</td>
                   <td className="px-4 py-2.5 text-xs">{(() => { try { return format(parseISO(r.date), 'EEE'); } catch { return '—'; } })()}</td>
