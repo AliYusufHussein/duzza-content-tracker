@@ -6,10 +6,10 @@ import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { RecordDialog, FieldDef } from '@/components/RecordDialog';
 import { Button } from '@/components/ui/button';
-import { Trash2, Clock, Upload, Download } from 'lucide-react';
+import { Trash2, Clock, Upload, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PLATFORMS, suggestedPostTime } from '@/lib/automation';
 import { toast } from 'sonner';
-import { format, parseISO, startOfWeek, addDays, isSameDay } from 'date-fns';
+import { format, parseISO, startOfWeek, addDays, isSameDay, addWeeks } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const STATUSES = ['Planned', 'Scheduled', 'Posted', 'Skipped'];
@@ -45,6 +45,7 @@ export default function CalendarPage() {
   const { rows, refresh } = useTable<any>('calendar', 'date', true);
   const { rows: channels } = useTable<any>('channels');
   const [filterChannel, setFilterChannel] = useState<string>('all');
+  const [weekOffset, setWeekOffset] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const channelOptions = useMemo(
@@ -75,8 +76,15 @@ export default function CalendarPage() {
   );
 
   const today = new Date();
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+  const weekStart = addWeeks(startOfWeek(today, { weekStartsOn: 1 }), weekOffset);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  // Auto-jump to the first week containing posts when filtering by a channel with no current-week content
+  const earliestDateForFilter = useMemo(() => {
+    const src = filterChannel === 'all' ? rows : rows.filter(r => r.channel === filterChannel);
+    const future = src.map(r => r.date).filter(Boolean).sort();
+    return future[0];
+  }, [rows, filterChannel]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, any[]>();
@@ -154,13 +162,35 @@ export default function CalendarPage() {
     <>
       <PageHeader
         title="Content Calendar"
-        subtitle={`Week of ${format(weekStart, 'MMM d')}. Posting times auto-suggested per platform: X 12:00 · IG 18:00 · Telegram 20:00.`}
+        subtitle={`Week of ${format(weekStart, 'MMM d, yyyy')}. Posting times auto-suggested per platform: X 12:00 · IG 18:00 · Telegram 20:00.`}
         action={<RecordDialog title="Schedule content" fields={fields} onSubmit={create} />}
       />
 
       <Card className="surface-card p-3 mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground mr-1">Week</span>
+        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setWeekOffset(o => o - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+        <Button size="sm" variant="outline" className="h-8" onClick={() => setWeekOffset(0)}>Today</Button>
+        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setWeekOffset(o => o + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+        {earliestDateForFilter && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 text-xs"
+            onClick={() => {
+              const target = startOfWeek(parseISO(earliestDateForFilter), { weekStartsOn: 1 });
+              const base = startOfWeek(today, { weekStartsOn: 1 });
+              const diff = Math.round((target.getTime() - base.getTime()) / (7 * 24 * 60 * 60 * 1000));
+              setWeekOffset(diff);
+            }}
+          >
+            Jump to first post
+          </Button>
+        )}
+      </Card>
+
+      <Card className="surface-card p-3 mb-4 flex flex-wrap items-center gap-2">
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground mr-1">Channel</span>
-        <Select value={filterChannel} onValueChange={setFilterChannel}>
+        <Select value={filterChannel} onValueChange={(v) => { setFilterChannel(v); setWeekOffset(0); }}>
           <SelectTrigger className="h-8 w-[220px] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All channels</SelectItem>
