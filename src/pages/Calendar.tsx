@@ -162,13 +162,35 @@ export default function CalendarPage() {
     <>
       <PageHeader
         title="Content Calendar"
-        subtitle={`Week of ${format(weekStart, 'MMM d')}. Posting times auto-suggested per platform: X 12:00 · IG 18:00 · Telegram 20:00.`}
+        subtitle={`Week of ${format(weekStart, 'MMM d, yyyy')}. Posting times auto-suggested per platform: X 12:00 · IG 18:00 · Telegram 20:00.`}
         action={<RecordDialog title="Schedule content" fields={fields} onSubmit={create} />}
       />
 
       <Card className="surface-card p-3 mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground mr-1">Week</span>
+        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setWeekOffset(o => o - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+        <Button size="sm" variant="outline" className="h-8" onClick={() => setWeekOffset(0)}>Today</Button>
+        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setWeekOffset(o => o + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+        {earliestDateForFilter && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 text-xs"
+            onClick={() => {
+              const target = startOfWeek(parseISO(earliestDateForFilter), { weekStartsOn: 1 });
+              const base = startOfWeek(today, { weekStartsOn: 1 });
+              const diff = Math.round((target.getTime() - base.getTime()) / (7 * 24 * 60 * 60 * 1000));
+              setWeekOffset(diff);
+            }}
+          >
+            Jump to first post
+          </Button>
+        )}
+      </Card>
+
+      <Card className="surface-card p-3 mb-4 flex flex-wrap items-center gap-2">
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground mr-1">Channel</span>
-        <Select value={filterChannel} onValueChange={setFilterChannel}>
+        <Select value={filterChannel} onValueChange={(v) => { setFilterChannel(v); setWeekOffset(0); }}>
           <SelectTrigger className="h-8 w-[220px] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All channels</SelectItem>
