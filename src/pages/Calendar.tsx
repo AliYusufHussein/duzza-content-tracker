@@ -76,8 +76,15 @@ export default function CalendarPage() {
   );
 
   const today = new Date();
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+  const weekStart = addWeeks(startOfWeek(today, { weekStartsOn: 1 }), weekOffset);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  // Auto-jump to the first week containing posts when filtering by a channel with no current-week content
+  const earliestDateForFilter = useMemo(() => {
+    const src = filterChannel === 'all' ? rows : rows.filter(r => r.channel === filterChannel);
+    const future = src.map(r => r.date).filter(Boolean).sort();
+    return future[0];
+  }, [rows, filterChannel]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, any[]>();
