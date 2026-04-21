@@ -16,6 +16,7 @@ const nav = [
 
 export default function AppLayout() {
   const loc = useLocation();
+  const { user, signOut } = useAuth();
   const current = nav.find(n => n.end ? loc.pathname === n.to : loc.pathname.startsWith(n.to));
 
   return (
