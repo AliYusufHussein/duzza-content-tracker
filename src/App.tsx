@@ -3,13 +3,15 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/hooks/useAuth";
+import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
+import AuthPage from "./pages/Auth";
+import Today from "./pages/Today";
 import Dashboard from "./pages/Dashboard";
 import Pipeline from "./pages/Pipeline";
 import Performance from "./pages/Performance";
 import Growth from "./pages/Growth";
-import Ideas from "./pages/Ideas";
-import Repurposing from "./pages/Repurposing";
 import Calendar from "./pages/Calendar";
 import Channels from "./pages/Channels";
 import NotFound from "./pages/NotFound.tsx";
@@ -22,19 +24,23 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/pipeline" element={<Pipeline />} />
-            <Route path="/performance" element={<Performance />} />
-            <Route path="/growth" element={<Growth />} />
-            <Route path="/ideas" element={<Ideas />} />
-            <Route path="/repurposing" element={<Repurposing />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/channels" element={<Channels />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/auth" element={<AuthPage />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/" element={<Today />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/pipeline" element={<Pipeline />} />
+                <Route path="/performance" element={<Performance />} />
+                <Route path="/growth" element={<Growth />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/channels" element={<Channels />} />
+              </Route>
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

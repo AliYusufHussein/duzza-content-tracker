@@ -1,14 +1,15 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Workflow, BarChart3, TrendingUp, Lightbulb, Recycle, Calendar, Radio } from 'lucide-react';
+import { LayoutDashboard, Workflow, BarChart3, TrendingUp, Calendar, Radio, Sun, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 
 const nav = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/', label: 'Today', icon: Sun, end: true },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/pipeline', label: 'Pipeline', icon: Workflow },
   { to: '/performance', label: 'Performance', icon: BarChart3 },
   { to: '/growth', label: 'Growth', icon: TrendingUp },
-  { to: '/ideas', label: 'Ideas Bank', icon: Lightbulb },
-  { to: '/repurposing', label: 'Repurposing', icon: Recycle },
   { to: '/calendar', label: 'Calendar', icon: Calendar },
   { to: '/channels', label: 'Channels', icon: Radio },
 ];
