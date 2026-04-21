@@ -114,8 +114,8 @@ export default function PipelinePage() {
               {filtered.map(r => {
                 const isOpen = expanded.has(r.id);
                 return (
-                  <>
-                    <tr key={r.id} className="border-b border-border/60 hover:bg-secondary/40 cursor-pointer" onClick={() => toggle(r.id)}>
+                  <Fragment key={r.id}>
+                    <tr className="border-b border-border/60 hover:bg-secondary/40 cursor-pointer" onClick={() => toggle(r.id)}>
                       <td className="px-2 py-3 align-top">
                         <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                       </td>
