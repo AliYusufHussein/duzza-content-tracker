@@ -138,7 +138,7 @@ export default function CalendarPage() {
     const sample = filterChannel !== 'all' ? filterChannel : (channelOptions[0] ?? 'BrandName');
     const csv = [
       'date,channel,platform,content,status,notes',
-      `${new Date().toISOString().slice(0, 10)},${sample},Telegram,"Sample post — replace with your content",Planned,`,
+      `${new Date().toISOString().slice(0, 10)},${sample},Telegram,"Sample post — replace with your content",Scheduled,`,
     ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
