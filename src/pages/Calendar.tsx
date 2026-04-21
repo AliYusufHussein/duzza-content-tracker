@@ -48,6 +48,28 @@ export default function CalendarPage() {
   const [weekOffset, setWeekOffset] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Auto-migrate any legacy Planned/Skipped calendar rows back into the pipeline as ideas
+  useEffect(() => {
+    const legacy = rows.filter(r => r.status === 'Planned' || r.status === 'Skipped');
+    if (!legacy.length) return;
+    (async () => {
+      const toInsert = legacy.map(r => ({
+        idea: r.content,
+        channel: r.channel ?? null,
+        platform: r.platform ?? null,
+        date: r.date,
+        notes: r.notes ?? null,
+        status: 'Idea',
+      }));
+      const { error: insErr } = await supabase.from('pipeline').insert(toInsert);
+      if (insErr) { console.error(insErr); return; }
+      const { error: delErr } = await supabase.from('calendar').delete().in('id', legacy.map(r => r.id));
+      if (delErr) { console.error(delErr); return; }
+      toast.success(`Moved ${legacy.length} item${legacy.length !== 1 ? 's' : ''} to pipeline`);
+      refresh();
+    })();
+  }, [rows, refresh]);
+
   const channelOptions = useMemo(
     () => Array.from(new Set(channels.map(c => c.brand))).filter(Boolean) as string[],
     [channels]
