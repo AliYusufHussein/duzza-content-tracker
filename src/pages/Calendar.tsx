@@ -88,7 +88,7 @@ export default function CalendarPage() {
     { name: 'channel', label: 'Channel', type: 'select', options: channelOptions, defaultValue: filterChannel === 'all' ? '' : filterChannel },
     { name: 'platform', label: 'Platform', type: 'select', options: platformsForFilter as any },
     { name: 'content', label: 'Content', type: 'textarea', required: true },
-    { name: 'status', label: 'Status', type: 'select', options: STATUSES, defaultValue: 'Planned' },
+    { name: 'status', label: 'Status', type: 'select', options: STATUSES, defaultValue: 'Scheduled' },
     { name: 'notes', label: 'Notes', type: 'textarea' },
   ];
 
