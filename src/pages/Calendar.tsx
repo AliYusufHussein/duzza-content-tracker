@@ -297,7 +297,19 @@ export default function CalendarPage() {
                   <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">{suggestedPostTime(r.platform)}</td>
                   <td className="px-4 py-2.5"><StatusBadge value={r.status} /></td>
                   <td className="px-4 py-2.5 text-right">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(r.id)}><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></Button>
+                    <div className="flex items-center justify-end gap-0.5">
+                      <RecordDialog
+                        title="Edit scheduled post"
+                        fields={fields}
+                        initial={r}
+                        onSubmit={(v) => update(r.id, v)}
+                        submitLabel="Save changes"
+                        trigger={
+                          <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></Button>
+                        }
+                      />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(r.id)} title="Delete"><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></Button>
+                    </div>
                   </td>
                 </tr>
               ))}
