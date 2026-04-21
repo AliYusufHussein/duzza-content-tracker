@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Trash2, ExternalLink, ChevronRight, Pencil } from 'lucide-react';
 import { PIPELINE_STATUSES, PILLARS, FORMATS, PLATFORMS, priorityScore, priorityLabel } from '@/lib/automation';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 type Pipeline = any;
 
@@ -20,6 +22,7 @@ export default function PipelinePage() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [scheduling, setScheduling] = useState<{ row: any; date: string } | null>(null);
 
   const toggle = (id: string) => setExpanded(prev => {
     const next = new Set(prev);
@@ -59,8 +62,35 @@ export default function PipelinePage() {
   };
 
   const updateStatus = async (id: string, newStatus: string) => {
+    if (newStatus === 'Scheduled') {
+      const row = rows.find(r => r.id === id);
+      if (row) {
+        setScheduling({ row, date: row.date || new Date().toISOString().slice(0, 10) });
+        return;
+      }
+    }
     const { error } = await supabase.from('pipeline').update({ status: newStatus }).eq('id', id);
     if (error) toast.error(error.message); else refresh();
+  };
+
+  const confirmSchedule = async () => {
+    if (!scheduling) return;
+    const { row, date } = scheduling;
+    if (!date) { toast.error('Pick a date'); return; }
+    const { error: insErr } = await supabase.from('calendar').insert({
+      date,
+      channel: row.channel ?? null,
+      platform: row.platform ?? null,
+      content: [row.idea, row.hook ? `Hook: ${row.hook}` : null].filter(Boolean).join('\n\n'),
+      status: 'Scheduled',
+      notes: row.notes ?? null,
+    });
+    if (insErr) { toast.error(insErr.message); return; }
+    const { error: delErr } = await supabase.from('pipeline').delete().eq('id', row.id);
+    if (delErr) { toast.error(delErr.message); return; }
+    toast.success('Moved to calendar');
+    setScheduling(null);
+    refresh();
   };
 
   const update = async (id: string, v: any) => {
@@ -201,6 +231,30 @@ export default function PipelinePage() {
           </table>
         </div>
       </Card>
+
+      <Dialog open={!!scheduling} onOpenChange={(o) => { if (!o) setScheduling(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Schedule on calendar</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground line-clamp-2">{scheduling?.row?.idea}</p>
+            <div className="space-y-1.5">
+              <Label>Post date</Label>
+              <Input
+                type="date"
+                value={scheduling?.date ?? ''}
+                onChange={e => setScheduling(s => s ? { ...s, date: e.target.value } : s)}
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">This item will be moved out of the pipeline and added to the calendar.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduling(null)}>Cancel</Button>
+            <Button onClick={confirmSchedule}>Move to calendar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

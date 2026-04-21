@@ -8,7 +8,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
 import AuthPage from "./pages/Auth";
 import Today from "./pages/Today";
-import Dashboard from "./pages/Dashboard";
 import Pipeline from "./pages/Pipeline";
 import Calendar from "./pages/Calendar";
 import Channels from "./pages/Channels";
@@ -28,7 +27,6 @@ const App = () => (
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Today />} />
-                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/pipeline" element={<Pipeline />} />
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/channels" element={<Channels />} />

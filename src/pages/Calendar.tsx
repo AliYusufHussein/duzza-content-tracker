@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTable } from '@/hooks/useTable';
 import { PageHeader } from '@/components/PageHeader';
@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { format, parseISO, startOfWeek, addDays, isSameDay, addWeeks } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const STATUSES = ['Planned', 'Scheduled', 'Posted', 'Skipped'];
+const STATUSES = ['Scheduled', 'Posted'];
 
 // Minimal CSV parser supporting quoted fields and commas inside quotes
 function parseCSV(text: string): Record<string, string>[] {
@@ -48,6 +48,28 @@ export default function CalendarPage() {
   const [weekOffset, setWeekOffset] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Auto-migrate any legacy Planned/Skipped calendar rows back into the pipeline as ideas
+  useEffect(() => {
+    const legacy = rows.filter(r => r.status === 'Planned' || r.status === 'Skipped');
+    if (!legacy.length) return;
+    (async () => {
+      const toInsert = legacy.map(r => ({
+        idea: r.content,
+        channel: r.channel ?? null,
+        platform: r.platform ?? null,
+        date: r.date,
+        notes: r.notes ?? null,
+        status: 'Idea',
+      }));
+      const { error: insErr } = await supabase.from('pipeline').insert(toInsert);
+      if (insErr) { console.error(insErr); return; }
+      const { error: delErr } = await supabase.from('calendar').delete().in('id', legacy.map(r => r.id));
+      if (delErr) { console.error(delErr); return; }
+      toast.success(`Moved ${legacy.length} item${legacy.length !== 1 ? 's' : ''} to pipeline`);
+      refresh();
+    })();
+  }, [rows, refresh]);
+
   const channelOptions = useMemo(
     () => Array.from(new Set(channels.map(c => c.brand))).filter(Boolean) as string[],
     [channels]
@@ -66,7 +88,7 @@ export default function CalendarPage() {
     { name: 'channel', label: 'Channel', type: 'select', options: channelOptions, defaultValue: filterChannel === 'all' ? '' : filterChannel },
     { name: 'platform', label: 'Platform', type: 'select', options: platformsForFilter as any },
     { name: 'content', label: 'Content', type: 'textarea', required: true },
-    { name: 'status', label: 'Status', type: 'select', options: STATUSES, defaultValue: 'Planned' },
+    { name: 'status', label: 'Status', type: 'select', options: STATUSES, defaultValue: 'Scheduled' },
     { name: 'notes', label: 'Notes', type: 'textarea' },
   ];
 
@@ -116,7 +138,7 @@ export default function CalendarPage() {
     const sample = filterChannel !== 'all' ? filterChannel : (channelOptions[0] ?? 'BrandName');
     const csv = [
       'date,channel,platform,content,status,notes',
-      `${new Date().toISOString().slice(0, 10)},${sample},Telegram,"Sample post — replace with your content",Planned,`,
+      `${new Date().toISOString().slice(0, 10)},${sample},Telegram,"Sample post — replace with your content",Scheduled,`,
     ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -150,7 +172,7 @@ export default function CalendarPage() {
         adjustments.push(`Row ${idx + 2}: "${platform}" not on ${channel} → "${fallback}"`);
         platform = fallback;
       }
-      const status = validStatuses.has(row.status) ? row.status : 'Planned';
+      const status = validStatuses.has(row.status) ? row.status : 'Scheduled';
       records.push({ date, channel, platform, content, status, notes: row.notes || null });
     });
 
