@@ -1,20 +1,22 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Workflow, BarChart3, TrendingUp, Lightbulb, Recycle, Calendar, Radio } from 'lucide-react';
+import { LayoutDashboard, Workflow, BarChart3, TrendingUp, Calendar, Radio, Sun, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 
 const nav = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/', label: 'Today', icon: Sun, end: true },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/pipeline', label: 'Pipeline', icon: Workflow },
   { to: '/performance', label: 'Performance', icon: BarChart3 },
   { to: '/growth', label: 'Growth', icon: TrendingUp },
-  { to: '/ideas', label: 'Ideas Bank', icon: Lightbulb },
-  { to: '/repurposing', label: 'Repurposing', icon: Recycle },
   { to: '/calendar', label: 'Calendar', icon: Calendar },
   { to: '/channels', label: 'Channels', icon: Radio },
 ];
 
 export default function AppLayout() {
   const loc = useLocation();
+  const { user, signOut } = useAuth();
   const current = nav.find(n => n.end ? loc.pathname === n.to : loc.pathname.startsWith(n.to));
 
   return (
@@ -44,10 +46,13 @@ export default function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="text-[11px] text-muted-foreground leading-relaxed">
-            Plan → Schedule → Post → Measure → Repurpose
+        <div className="p-4 border-t border-sidebar-border space-y-2">
+          <div className="text-[11px] text-muted-foreground leading-relaxed truncate" title={user?.email ?? ''}>
+            {user?.email}
           </div>
+          <Button onClick={signOut} variant="outline" size="sm" className="w-full h-7 text-xs">
+            <LogOut className="h-3 w-3 mr-1.5" /> Sign out
+          </Button>
         </div>
       </aside>
 
