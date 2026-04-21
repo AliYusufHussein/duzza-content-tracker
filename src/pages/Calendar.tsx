@@ -172,7 +172,7 @@ export default function CalendarPage() {
         adjustments.push(`Row ${idx + 2}: "${platform}" not on ${channel} → "${fallback}"`);
         platform = fallback;
       }
-      const status = validStatuses.has(row.status) ? row.status : 'Planned';
+      const status = validStatuses.has(row.status) ? row.status : 'Scheduled';
       records.push({ date, channel, platform, content, status, notes: row.notes || null });
     });
 
