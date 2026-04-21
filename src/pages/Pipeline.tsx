@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StatusBadge } from '@/components/StatusBadge';
 import { RecordDialog, FieldDef } from '@/components/RecordDialog';
 import { Button } from '@/components/ui/button';
-import { Trash2, ExternalLink } from 'lucide-react';
+import { Trash2, ExternalLink, ChevronRight, Pencil } from 'lucide-react';
 import { PIPELINE_STATUSES, PILLARS, FORMATS, PLATFORMS, priorityScore, priorityLabel } from '@/lib/automation';
 import { toast } from 'sonner';
 
@@ -19,6 +19,13 @@ export default function PipelinePage() {
   const { rows: channels } = useTable<any>('channels');
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const toggle = (id: string) => setExpanded(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
 
   const channelOptions = useMemo(
     () => Array.from(new Set(channels.map(c => c.brand))).filter(Boolean) as string[],
@@ -54,6 +61,11 @@ export default function PipelinePage() {
   const updateStatus = async (id: string, newStatus: string) => {
     const { error } = await supabase.from('pipeline').update({ status: newStatus }).eq('id', id);
     if (error) toast.error(error.message); else refresh();
+  };
+
+  const update = async (id: string, v: any) => {
+    const { error } = await supabase.from('pipeline').update(v).eq('id', id);
+    if (error) toast.error(error.message); else { toast.success('Updated'); refresh(); }
   };
 
   const remove = async (id: string) => {
