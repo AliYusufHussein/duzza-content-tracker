@@ -194,7 +194,7 @@ export default function PipelinePage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
