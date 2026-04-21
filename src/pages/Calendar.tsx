@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTable } from '@/hooks/useTable';
 import { PageHeader } from '@/components/PageHeader';
@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { format, parseISO, startOfWeek, addDays, isSameDay, addWeeks } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const STATUSES = ['Planned', 'Scheduled', 'Posted', 'Skipped'];
+const STATUSES = ['Scheduled', 'Posted'];
 
 // Minimal CSV parser supporting quoted fields and commas inside quotes
 function parseCSV(text: string): Record<string, string>[] {
