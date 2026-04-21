@@ -27,7 +27,6 @@ const App = () => (
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Today />} />
-                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/pipeline" element={<Pipeline />} />
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/channels" element={<Channels />} />
