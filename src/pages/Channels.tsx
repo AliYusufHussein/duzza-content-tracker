@@ -58,14 +58,15 @@ export default function ChannelsPage() {
                 <div className="text-base font-semibold tracking-tight">{g.brand}</div>
                 <div className="text-[11px] uppercase tracking-wider text-muted-foreground mt-0.5">{g.category}</div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono text-muted-foreground">{g.channels.length} platform{g.channels.length !== 1 && 's'}</span>
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-mono text-muted-foreground mr-1">{g.channels.length} platform{g.channels.length !== 1 && 's'}</span>
+                <BulkCalendarUpload brand={g.brand} platforms={g.channels} onDone={refresh} />
                 <RecordDialog
                   title={`Add platform to ${g.brand}`}
                   fields={fields}
                   onSubmit={create}
                   trigger={
-                    <Button size="icon" variant="ghost" className="h-6 w-6" title="Add another platform">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" title="Add another platform">
                       <Plus className="h-3.5 w-3.5" />
                     </Button>
                   }
