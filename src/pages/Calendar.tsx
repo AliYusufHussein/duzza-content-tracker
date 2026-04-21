@@ -242,16 +242,26 @@ export default function CalendarPage() {
               </div>
               <div className="space-y-1.5">
                 {items.map(it => (
-                  <div key={it.id} className="rounded border border-border bg-card/60 p-2 text-xs">
-                    <div className="flex items-center justify-between gap-1">
-                      <StatusBadge value={it.status} className="text-[10px]" />
-                      <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground font-mono">
-                        <Clock className="h-2.5 w-2.5" />{suggestedPostTime(it.platform)}
-                      </span>
-                    </div>
-                    <div className="mt-1 line-clamp-2 leading-snug">{it.content}</div>
-                    <div className="text-[10px] text-muted-foreground mt-1">{it.channel ?? '—'} · {it.platform ?? '—'}</div>
-                  </div>
+                  <RecordDialog
+                    key={it.id}
+                    title="Edit scheduled post"
+                    fields={fields}
+                    initial={it}
+                    onSubmit={(v) => update(it.id, v)}
+                    submitLabel="Save changes"
+                    trigger={
+                      <button type="button" className="w-full text-left rounded border border-border bg-card/60 p-2 text-xs hover:bg-secondary/60 transition-colors">
+                        <div className="flex items-center justify-between gap-1">
+                          <StatusBadge value={it.status} className="text-[10px]" />
+                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground font-mono">
+                            <Clock className="h-2.5 w-2.5" />{suggestedPostTime(it.platform)}
+                          </span>
+                        </div>
+                        <div className="mt-1 line-clamp-2 leading-snug">{it.content}</div>
+                        <div className="text-[10px] text-muted-foreground mt-1">{it.channel ?? '—'} · {it.platform ?? '—'}</div>
+                      </button>
+                    }
+                  />
                 ))}
               </div>
             </Card>
