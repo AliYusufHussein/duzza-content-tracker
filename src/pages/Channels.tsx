@@ -7,6 +7,7 @@ import { RecordDialog, FieldDef } from '@/components/RecordDialog';
 import { Button } from '@/components/ui/button';
 import { Trash2, ExternalLink, Pencil, Plus } from 'lucide-react';
 import { PLATFORMS, PILLARS } from '@/lib/automation';
+import BulkCalendarUpload from '@/components/BulkCalendarUpload';
 import { toast } from 'sonner';
 
 export default function ChannelsPage() {
