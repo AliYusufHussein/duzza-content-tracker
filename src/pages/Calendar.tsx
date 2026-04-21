@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { RecordDialog, FieldDef } from '@/components/RecordDialog';
 import { Button } from '@/components/ui/button';
-import { Trash2, Clock, Upload, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, Clock, Upload, Download, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { PLATFORMS, suggestedPostTime } from '@/lib/automation';
 import { toast } from 'sonner';
 import { format, parseISO, startOfWeek, addDays, isSameDay, addWeeks } from 'date-fns';
@@ -103,9 +103,13 @@ export default function CalendarPage() {
     const { error } = await supabase.from('calendar').insert(v);
     if (error) toast.error(error.message); else { toast.success('Scheduled'); refresh(); }
   };
+  const update = async (id: string, v: any) => {
+    const { error } = await supabase.from('calendar').update(v).eq('id', id);
+    if (error) toast.error(error.message); else { toast.success('Updated'); refresh(); }
+  };
   const remove = async (id: string) => {
     const { error } = await supabase.from('calendar').delete().eq('id', id);
-    if (error) toast.error(error.message); else refresh();
+    if (error) toast.error(error.message); else { toast.success('Deleted'); refresh(); }
   };
 
   const downloadTemplate = () => {
@@ -238,16 +242,26 @@ export default function CalendarPage() {
               </div>
               <div className="space-y-1.5">
                 {items.map(it => (
-                  <div key={it.id} className="rounded border border-border bg-card/60 p-2 text-xs">
-                    <div className="flex items-center justify-between gap-1">
-                      <StatusBadge value={it.status} className="text-[10px]" />
-                      <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground font-mono">
-                        <Clock className="h-2.5 w-2.5" />{suggestedPostTime(it.platform)}
-                      </span>
-                    </div>
-                    <div className="mt-1 line-clamp-2 leading-snug">{it.content}</div>
-                    <div className="text-[10px] text-muted-foreground mt-1">{it.channel ?? '—'} · {it.platform ?? '—'}</div>
-                  </div>
+                  <RecordDialog
+                    key={it.id}
+                    title="Edit scheduled post"
+                    fields={fields}
+                    initial={it}
+                    onSubmit={(v) => update(it.id, v)}
+                    submitLabel="Save changes"
+                    trigger={
+                      <button type="button" className="w-full text-left rounded border border-border bg-card/60 p-2 text-xs hover:bg-secondary/60 transition-colors">
+                        <div className="flex items-center justify-between gap-1">
+                          <StatusBadge value={it.status} className="text-[10px]" />
+                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground font-mono">
+                            <Clock className="h-2.5 w-2.5" />{suggestedPostTime(it.platform)}
+                          </span>
+                        </div>
+                        <div className="mt-1 line-clamp-2 leading-snug">{it.content}</div>
+                        <div className="text-[10px] text-muted-foreground mt-1">{it.channel ?? '—'} · {it.platform ?? '—'}</div>
+                      </button>
+                    }
+                  />
                 ))}
               </div>
             </Card>
@@ -283,7 +297,19 @@ export default function CalendarPage() {
                   <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">{suggestedPostTime(r.platform)}</td>
                   <td className="px-4 py-2.5"><StatusBadge value={r.status} /></td>
                   <td className="px-4 py-2.5 text-right">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(r.id)}><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></Button>
+                    <div className="flex items-center justify-end gap-0.5">
+                      <RecordDialog
+                        title="Edit scheduled post"
+                        fields={fields}
+                        initial={r}
+                        onSubmit={(v) => update(r.id, v)}
+                        submitLabel="Save changes"
+                        trigger={
+                          <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></Button>
+                        }
+                      />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(r.id)} title="Delete"><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></Button>
+                    </div>
                   </td>
                 </tr>
               ))}
