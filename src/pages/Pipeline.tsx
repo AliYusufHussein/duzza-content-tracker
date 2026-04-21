@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Trash2, ExternalLink, ChevronRight, Pencil } from 'lucide-react';
 import { PIPELINE_STATUSES, PILLARS, FORMATS, PLATFORMS, priorityScore, priorityLabel } from '@/lib/automation';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 type Pipeline = any;
 
