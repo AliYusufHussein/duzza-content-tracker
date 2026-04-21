@@ -12,9 +12,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     (async () => {
-      const [posts, ideas, growth, channels, pipeline] = await Promise.all([
+      const [posts, growth, channels, pipeline] = await Promise.all([
         supabase.from('posts').select('*').order('date', { ascending: true }),
-        supabase.from('ideas').select('*'),
         supabase.from('growth').select('*').order('date', { ascending: true }),
         supabase.from('channels').select('*'),
         supabase.from('pipeline').select('*'),
@@ -56,9 +55,8 @@ export default function Dashboard() {
         totalPosts: postRows.length,
         viralCount,
         avgEng,
-        activeIdeas: (ideas.data ?? []).filter(i => i.status !== 'Used').length,
-        channels: (channels.data ?? []).length,
         pipelineCount: (pipeline.data ?? []).length,
+        channels: (channels.data ?? []).length,
         engTrend,
         growthPerPlatform,
         tierData,
@@ -77,7 +75,7 @@ export default function Dashboard() {
         <Kpi label="Total Posts" value={stats ? fmtNum(stats.totalPosts) : '—'} />
         <Kpi label="Viral Posts" value={stats ? fmtNum(stats.viralCount) : '—'} accent="viral" />
         <Kpi label="Avg Engagement" value={stats ? fmtPct(stats.avgEng) : '—'} accent="primary" />
-        <Kpi label="Active Ideas" value={stats ? fmtNum(stats.activeIdeas) : '—'} />
+        <Kpi label="Pipeline Items" value={stats ? fmtNum(stats.pipelineCount) : '—'} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
