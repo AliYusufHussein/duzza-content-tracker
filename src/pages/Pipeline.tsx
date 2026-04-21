@@ -231,6 +231,30 @@ export default function PipelinePage() {
           </table>
         </div>
       </Card>
+
+      <Dialog open={!!scheduling} onOpenChange={(o) => { if (!o) setScheduling(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Schedule on calendar</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground line-clamp-2">{scheduling?.row?.idea}</p>
+            <div className="space-y-1.5">
+              <Label>Post date</Label>
+              <Input
+                type="date"
+                value={scheduling?.date ?? ''}
+                onChange={e => setScheduling(s => s ? { ...s, date: e.target.value } : s)}
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">This item will be moved out of the pipeline and added to the calendar.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduling(null)}>Cancel</Button>
+            <Button onClick={confirmSchedule}>Move to calendar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
