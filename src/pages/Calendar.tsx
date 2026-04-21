@@ -103,9 +103,13 @@ export default function CalendarPage() {
     const { error } = await supabase.from('calendar').insert(v);
     if (error) toast.error(error.message); else { toast.success('Scheduled'); refresh(); }
   };
+  const update = async (id: string, v: any) => {
+    const { error } = await supabase.from('calendar').update(v).eq('id', id);
+    if (error) toast.error(error.message); else { toast.success('Updated'); refresh(); }
+  };
   const remove = async (id: string) => {
     const { error } = await supabase.from('calendar').delete().eq('id', id);
-    if (error) toast.error(error.message); else refresh();
+    if (error) toast.error(error.message); else { toast.success('Deleted'); refresh(); }
   };
 
   const downloadTemplate = () => {
