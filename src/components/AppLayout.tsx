@@ -46,10 +46,13 @@ export default function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="text-[11px] text-muted-foreground leading-relaxed">
-            Plan → Schedule → Post → Measure → Repurpose
+        <div className="p-4 border-t border-sidebar-border space-y-2">
+          <div className="text-[11px] text-muted-foreground leading-relaxed truncate" title={user?.email ?? ''}>
+            {user?.email}
           </div>
+          <Button onClick={signOut} variant="outline" size="sm" className="w-full h-7 text-xs">
+            <LogOut className="h-3 w-3 mr-1.5" /> Sign out
+          </Button>
         </div>
       </aside>
 
