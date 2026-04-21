@@ -62,8 +62,35 @@ export default function PipelinePage() {
   };
 
   const updateStatus = async (id: string, newStatus: string) => {
+    if (newStatus === 'Scheduled') {
+      const row = rows.find(r => r.id === id);
+      if (row) {
+        setScheduling({ row, date: row.date || new Date().toISOString().slice(0, 10) });
+        return;
+      }
+    }
     const { error } = await supabase.from('pipeline').update({ status: newStatus }).eq('id', id);
     if (error) toast.error(error.message); else refresh();
+  };
+
+  const confirmSchedule = async () => {
+    if (!scheduling) return;
+    const { row, date } = scheduling;
+    if (!date) { toast.error('Pick a date'); return; }
+    const { error: insErr } = await supabase.from('calendar').insert({
+      date,
+      channel: row.channel ?? null,
+      platform: row.platform ?? null,
+      content: [row.idea, row.hook ? `Hook: ${row.hook}` : null].filter(Boolean).join('\n\n'),
+      status: 'Scheduled',
+      notes: row.notes ?? null,
+    });
+    if (insErr) { toast.error(insErr.message); return; }
+    const { error: delErr } = await supabase.from('pipeline').delete().eq('id', row.id);
+    if (delErr) { toast.error(delErr.message); return; }
+    toast.success('Moved to calendar');
+    setScheduling(null);
+    refresh();
   };
 
   const update = async (id: string, v: any) => {
