@@ -97,6 +97,7 @@ export default function PipelinePage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
+                <th className="px-2 py-3 w-8"></th>
                 <th className="px-4 py-3 font-medium">Priority</th>
                 <th className="px-4 py-3 font-medium">Idea</th>
                 <th className="px-4 py-3 font-medium">Channel · Platform</th>
@@ -108,51 +109,94 @@ export default function PipelinePage() {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">No items yet — add your first content idea.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">No items yet — add your first content idea.</td></tr>
               )}
-              {filtered.map(r => (
-                <tr key={r.id} className="border-b border-border/60 hover:bg-secondary/40">
-                  <td className="px-4 py-3 align-top">
-                    <div className="flex items-center gap-2">
-                      <StatusBadge value={r.label} />
-                      <span className="text-[11px] font-mono text-muted-foreground">{r.score}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 align-top max-w-md">
-                    <div className="font-medium">{r.idea}</div>
-                    {r.hook && <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">↳ {r.hook}</div>}
-                  </td>
-                  <td className="px-4 py-3 align-top text-xs">
-                    <div>{r.channel ?? '—'}</div>
-                    <div className="text-muted-foreground">{r.platform ?? '—'}</div>
-                  </td>
-                  <td className="px-4 py-3 align-top text-xs">
-                    <div>{r.pillar ?? '—'}</div>
-                    <div className="text-muted-foreground">{r.format ?? '—'}</div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <Select value={r.status} onValueChange={v => updateStatus(r.id, v)}>
-                      <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {PIPELINE_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </td>
-                  <td className="px-4 py-3 align-top text-xs text-muted-foreground font-mono">{r.date}</td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="flex items-center gap-1">
-                      {r.posted_link && (
-                        <a href={r.posted_link} target="_blank" rel="noreferrer" className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground">
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                      )}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(r.id)}>
-                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map(r => {
+                const isOpen = expanded.has(r.id);
+                return (
+                  <>
+                    <tr key={r.id} className="border-b border-border/60 hover:bg-secondary/40 cursor-pointer" onClick={() => toggle(r.id)}>
+                      <td className="px-2 py-3 align-top">
+                        <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex items-center gap-2">
+                          <StatusBadge value={r.label} />
+                          <span className="text-[11px] font-mono text-muted-foreground">{r.score}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top max-w-md">
+                        <div className="font-medium line-clamp-1">{r.idea}</div>
+                        {r.hook && <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">↳ {r.hook}</div>}
+                      </td>
+                      <td className="px-4 py-3 align-top text-xs">
+                        <div>{r.channel ?? '—'}</div>
+                        <div className="text-muted-foreground">{r.platform ?? '—'}</div>
+                      </td>
+                      <td className="px-4 py-3 align-top text-xs">
+                        <div>{r.pillar ?? '—'}</div>
+                        <div className="text-muted-foreground">{r.format ?? '—'}</div>
+                      </td>
+                      <td className="px-4 py-3 align-top" onClick={e => e.stopPropagation()}>
+                        <Select value={r.status} onValueChange={v => updateStatus(r.id, v)}>
+                          <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {PIPELINE_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-3 align-top text-xs text-muted-foreground font-mono">{r.date}</td>
+                      <td className="px-4 py-3 align-top" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-1 justify-end">
+                          {r.posted_link && (
+                            <a href={r.posted_link} target="_blank" rel="noreferrer" className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground">
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          )}
+                          <RecordDialog
+                            title="Edit pipeline item"
+                            fields={fields}
+                            initial={r}
+                            onSubmit={(v) => update(r.id, v)}
+                            submitLabel="Save changes"
+                            trigger={
+                              <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></Button>
+                            }
+                          />
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(r.id)} title="Delete">
+                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                    {isOpen && (
+                      <tr key={r.id + '-exp'} className="border-b border-border/60 bg-secondary/20">
+                        <td></td>
+                        <td colSpan={7} className="px-4 py-4">
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Idea</div>
+                              <div className="whitespace-pre-wrap">{r.idea}</div>
+                            </div>
+                            {r.hook && (
+                              <div>
+                                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Hook</div>
+                                <div className="whitespace-pre-wrap italic">"{r.hook}"</div>
+                              </div>
+                            )}
+                            {r.notes && (
+                              <div>
+                                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Notes</div>
+                                <div className="whitespace-pre-wrap text-muted-foreground">{r.notes}</div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
             </tbody>
           </table>
         </div>
