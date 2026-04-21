@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Workflow, BarChart3, TrendingUp, Calendar, Radio, Sun, LogOut } from 'lucide-react';
+import { LayoutDashboard, Workflow, Calendar, Radio, Sun, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,6 @@ const nav = [
   { to: '/', label: 'Today', icon: Sun, end: true },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/pipeline', label: 'Pipeline', icon: Workflow },
-  { to: '/performance', label: 'Performance', icon: BarChart3 },
-  { to: '/growth', label: 'Growth', icon: TrendingUp },
   { to: '/calendar', label: 'Calendar', icon: Calendar },
   { to: '/channels', label: 'Channels', icon: Radio },
 ];
