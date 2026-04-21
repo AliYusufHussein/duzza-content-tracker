@@ -8,7 +8,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
 import AuthPage from "./pages/Auth";
 import Today from "./pages/Today";
-import Dashboard from "./pages/Dashboard";
 import Pipeline from "./pages/Pipeline";
 import Calendar from "./pages/Calendar";
 import Channels from "./pages/Channels";
