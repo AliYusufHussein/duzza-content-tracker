@@ -22,11 +22,17 @@ export default function PipelinePage() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [scheduling, setScheduling] = useState<{ row: any; date: string } | null>(null);
 
   const toggle = (id: string) => setExpanded(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  const toggleGroup = (key: string) => setCollapsedGroups(prev => {
+    const next = new Set(prev);
+    next.has(key) ? next.delete(key) : next.add(key);
     return next;
   });
 
@@ -55,6 +61,22 @@ export default function PipelinePage() {
       .map(r => ({ ...r, score: priorityScore(r), label: priorityLabel(priorityScore(r)) }))
       .sort((a, b) => b.score - a.score);
   }, [rows, q, status]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, any[]>();
+    filtered.forEach(r => {
+      const key = `${r.channel ?? 'Unassigned'} · ${r.platform ?? '—'}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(r);
+    });
+    return Array.from(map.entries());
+  }, [filtered]);
+
+  const allCollapsed = grouped.length > 0 && grouped.every(([k]) => collapsedGroups.has(k));
+  const toggleAll = () => {
+    if (allCollapsed) setCollapsedGroups(new Set());
+    else setCollapsedGroups(new Set(grouped.map(([k]) => k)));
+  };
 
   const create = async (v: any) => {
     const { error } = await supabase.from('pipeline').insert(v);
@@ -120,6 +142,11 @@ export default function PipelinePage() {
             {PIPELINE_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
+        <div className="sm:ml-auto">
+          <Button size="sm" variant="outline" onClick={toggleAll} disabled={!grouped.length}>
+            {allCollapsed ? 'Expand all' : 'Collapse all'}
+          </Button>
+        </div>
       </Card>
 
       <Card className="surface-card overflow-hidden">
@@ -141,89 +168,110 @@ export default function PipelinePage() {
               {filtered.length === 0 && (
                 <tr><td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">No items yet — add your first content idea.</td></tr>
               )}
-              {filtered.map(r => {
-                const isOpen = expanded.has(r.id);
+              {grouped.map(([groupKey, groupRows]) => {
+                const groupCollapsed = collapsedGroups.has(groupKey);
                 return (
-                  <Fragment key={r.id}>
-                    <tr className="border-b border-border/60 hover:bg-secondary/40 cursor-pointer" onClick={() => toggle(r.id)}>
-                      <td className="px-2 py-3 align-top">
-                        <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                  <Fragment key={groupKey}>
+                    <tr
+                      className="bg-secondary/60 border-b border-border cursor-pointer hover:bg-secondary"
+                      onClick={() => toggleGroup(groupKey)}
+                    >
+                      <td className="px-2 py-2">
+                        <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${groupCollapsed ? '' : 'rotate-90'}`} />
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td colSpan={7} className="px-4 py-2 text-xs">
                         <div className="flex items-center gap-2">
-                          <StatusBadge value={r.label} />
-                          <span className="text-[11px] font-mono text-muted-foreground">{r.score}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 align-top max-w-md">
-                        <div className="font-medium line-clamp-1">{r.idea}</div>
-                        {r.hook && <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">↳ {r.hook}</div>}
-                      </td>
-                      <td className="px-4 py-3 align-top text-xs">
-                        <div>{r.channel ?? '—'}</div>
-                        <div className="text-muted-foreground">{r.platform ?? '—'}</div>
-                      </td>
-                      <td className="px-4 py-3 align-top text-xs">
-                        <div>{r.pillar ?? '—'}</div>
-                        <div className="text-muted-foreground">{r.format ?? '—'}</div>
-                      </td>
-                      <td className="px-4 py-3 align-top" onClick={e => e.stopPropagation()}>
-                        <Select value={r.status} onValueChange={v => updateStatus(r.id, v)}>
-                          <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {PIPELINE_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-4 py-3 align-top text-xs text-muted-foreground font-mono">{r.date}</td>
-                      <td className="px-4 py-3 align-top" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center gap-1 justify-end">
-                          {r.posted_link && (
-                            <a href={r.posted_link} target="_blank" rel="noreferrer" className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground">
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </a>
-                          )}
-                          <RecordDialog
-                            title="Edit pipeline item"
-                            fields={fields}
-                            initial={r}
-                            onSubmit={(v) => update(r.id, v)}
-                            submitLabel="Save changes"
-                            trigger={
-                              <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></Button>
-                            }
-                          />
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(r.id)} title="Delete">
-                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                          </Button>
+                          <span className="font-semibold tracking-tight">{groupKey}</span>
+                          <span className="text-[10px] font-mono text-muted-foreground">{groupRows.length} item{groupRows.length !== 1 ? 's' : ''}</span>
                         </div>
                       </td>
                     </tr>
-                    {isOpen && (
-                      <tr key={r.id + '-exp'} className="border-b border-border/60 bg-secondary/20">
-                        <td></td>
-                        <td colSpan={7} className="px-4 py-4">
-                          <div className="space-y-2 text-sm">
-                            <div>
-                              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Idea</div>
-                              <div className="whitespace-pre-wrap">{r.idea}</div>
-                            </div>
-                            {r.hook && (
-                              <div>
-                                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Hook</div>
-                                <div className="whitespace-pre-wrap italic">"{r.hook}"</div>
+                    {!groupCollapsed && groupRows.map(r => {
+                      const isOpen = expanded.has(r.id);
+                      return (
+                        <Fragment key={r.id}>
+                          <tr className="border-b border-border/60 hover:bg-secondary/40 cursor-pointer" onClick={() => toggle(r.id)}>
+                            <td className="px-2 py-3 align-top">
+                              <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <div className="flex items-center gap-2">
+                                <StatusBadge value={r.label} />
+                                <span className="text-[11px] font-mono text-muted-foreground">{r.score}</span>
                               </div>
-                            )}
-                            {r.notes && (
-                              <div>
-                                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Notes</div>
-                                <div className="whitespace-pre-wrap text-muted-foreground">{r.notes}</div>
+                            </td>
+                            <td className="px-4 py-3 align-top max-w-md">
+                              <div className="font-medium line-clamp-1">{r.idea}</div>
+                              {r.hook && <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">↳ {r.hook}</div>}
+                            </td>
+                            <td className="px-4 py-3 align-top text-xs">
+                              <div>{r.channel ?? '—'}</div>
+                              <div className="text-muted-foreground">{r.platform ?? '—'}</div>
+                            </td>
+                            <td className="px-4 py-3 align-top text-xs">
+                              <div>{r.pillar ?? '—'}</div>
+                              <div className="text-muted-foreground">{r.format ?? '—'}</div>
+                            </td>
+                            <td className="px-4 py-3 align-top" onClick={e => e.stopPropagation()}>
+                              <Select value={r.status} onValueChange={v => updateStatus(r.id, v)}>
+                                <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {PIPELINE_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-4 py-3 align-top text-xs text-muted-foreground font-mono">{r.date}</td>
+                            <td className="px-4 py-3 align-top" onClick={e => e.stopPropagation()}>
+                              <div className="flex items-center gap-1 justify-end">
+                                {r.posted_link && (
+                                  <a href={r.posted_link} target="_blank" rel="noreferrer" className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground">
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                  </a>
+                                )}
+                                <RecordDialog
+                                  title="Edit pipeline item"
+                                  fields={fields}
+                                  initial={r}
+                                  onSubmit={(v) => update(r.id, v)}
+                                  submitLabel="Save changes"
+                                  trigger={
+                                    <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></Button>
+                                  }
+                                />
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(r.id)} title="Delete">
+                                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                </Button>
                               </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
+                            </td>
+                          </tr>
+                          {isOpen && (
+                            <tr key={r.id + '-exp'} className="border-b border-border/60 bg-secondary/20">
+                              <td></td>
+                              <td colSpan={7} className="px-4 py-4">
+                                <div className="space-y-2 text-sm">
+                                  <div>
+                                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Idea</div>
+                                    <div className="whitespace-pre-wrap">{r.idea}</div>
+                                  </div>
+                                  {r.hook && (
+                                    <div>
+                                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Hook</div>
+                                      <div className="whitespace-pre-wrap italic">"{r.hook}"</div>
+                                    </div>
+                                  )}
+                                  {r.notes && (
+                                    <div>
+                                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Notes</div>
+                                      <div className="whitespace-pre-wrap text-muted-foreground">{r.notes}</div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
                   </Fragment>
                 );
               })}

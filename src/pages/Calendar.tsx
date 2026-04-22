@@ -6,11 +6,14 @@ import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { RecordDialog, FieldDef } from '@/components/RecordDialog';
 import { Button } from '@/components/ui/button';
-import { Trash2, Clock, Upload, Download, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { Trash2, Clock, Upload, Download, ChevronLeft, ChevronRight, Pencil, ExternalLink } from 'lucide-react';
 import { PLATFORMS, suggestedPostTime } from '@/lib/automation';
 import { toast } from 'sonner';
 import { format, parseISO, startOfWeek, addDays, isSameDay, addWeeks } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const STATUSES = ['Scheduled', 'Posted'];
 
@@ -46,6 +49,7 @@ export default function CalendarPage() {
   const { rows: channels } = useTable<any>('channels');
   const [filterChannel, setFilterChannel] = useState<string>('all');
   const [weekOffset, setWeekOffset] = useState(0);
+  const [posting, setPosting] = useState<{ row: any; link: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Auto-migrate any legacy Planned/Skipped calendar rows back into the pipeline as ideas
@@ -89,6 +93,7 @@ export default function CalendarPage() {
     { name: 'platform', label: 'Platform', type: 'select', options: platformsForFilter as any },
     { name: 'content', label: 'Content', type: 'textarea', required: true },
     { name: 'status', label: 'Status', type: 'select', options: STATUSES, defaultValue: 'Scheduled' },
+    { name: 'posted_link', label: 'Posted link', type: 'url', placeholder: 'https://… (required when Posted)' },
     { name: 'notes', label: 'Notes', type: 'textarea' },
   ];
 
@@ -132,6 +137,24 @@ export default function CalendarPage() {
   const remove = async (id: string) => {
     const { error } = await supabase.from('calendar').delete().eq('id', id);
     if (error) toast.error(error.message); else { toast.success('Deleted'); refresh(); }
+  };
+  const changeStatus = (row: any, newStatus: string) => {
+    if (newStatus === 'Posted' && !row.posted_link) {
+      setPosting({ row, link: '' });
+      return;
+    }
+    update(row.id, { status: newStatus });
+  };
+  const confirmPosted = async () => {
+    if (!posting) return;
+    if (!posting.link.trim()) { toast.error('Paste the post URL'); return; }
+    const { error } = await supabase.from('calendar')
+      .update({ status: 'Posted', posted_link: posting.link.trim() })
+      .eq('id', posting.row.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Marked as posted');
+    setPosting(null);
+    refresh();
   };
 
   const downloadTemplate = () => {
@@ -280,7 +303,12 @@ export default function CalendarPage() {
                           </span>
                         </div>
                         <div className="mt-1 line-clamp-2 leading-snug">{it.content}</div>
-                        <div className="text-[10px] text-muted-foreground mt-1">{it.channel ?? '—'} · {it.platform ?? '—'}</div>
+                        <div className="flex items-center justify-between mt-1">
+                          <div className="text-[10px] text-muted-foreground">{it.channel ?? '—'} · {it.platform ?? '—'}</div>
+                          {it.posted_link && (
+                            <ExternalLink className="h-3 w-3 text-primary" />
+                          )}
+                        </div>
                       </button>
                     }
                   />
@@ -317,9 +345,21 @@ export default function CalendarPage() {
                   <td className="px-4 py-2.5 text-xs">{r.channel ?? '—'} <span className="text-muted-foreground">· {r.platform ?? '—'}</span></td>
                   <td className="px-4 py-2.5 text-xs max-w-md truncate">{r.content}</td>
                   <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">{suggestedPostTime(r.platform)}</td>
-                  <td className="px-4 py-2.5"><StatusBadge value={r.status} /></td>
+                  <td className="px-4 py-2.5">
+                    <Select value={r.status} onValueChange={(v) => changeStatus(r, v)}>
+                      <SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </td>
                   <td className="px-4 py-2.5 text-right">
                     <div className="flex items-center justify-end gap-0.5">
+                      {r.posted_link && (
+                        <a href={r.posted_link} target="_blank" rel="noreferrer" className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground" title="Open post">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      )}
                       <RecordDialog
                         title="Edit scheduled post"
                         fields={fields}
@@ -339,6 +379,32 @@ export default function CalendarPage() {
           </table>
         </div>
       </Card>
+
+      <Dialog open={!!posting} onOpenChange={(o) => { if (!o) setPosting(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mark as posted</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground line-clamp-2">{posting?.row?.content}</p>
+            <div className="space-y-1.5">
+              <Label>Posted link</Label>
+              <Input
+                type="url"
+                placeholder="https://…"
+                value={posting?.link ?? ''}
+                onChange={e => setPosting(s => s ? { ...s, link: e.target.value } : s)}
+                autoFocus
+              />
+              <p className="text-[11px] text-muted-foreground">Paste the URL of the published post so you can jump back to it later.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPosting(null)}>Cancel</Button>
+            <Button onClick={confirmPosted}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

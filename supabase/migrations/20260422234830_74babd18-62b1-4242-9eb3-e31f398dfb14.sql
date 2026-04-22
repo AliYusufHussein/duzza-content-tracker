@@ -1,0 +1,1 @@
+ALTER TABLE public.calendar ADD COLUMN IF NOT EXISTS posted_link text;
