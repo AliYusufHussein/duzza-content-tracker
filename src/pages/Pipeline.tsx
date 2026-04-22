@@ -142,6 +142,11 @@ export default function PipelinePage() {
             {PIPELINE_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
+        <div className="sm:ml-auto">
+          <Button size="sm" variant="outline" onClick={toggleAll} disabled={!grouped.length}>
+            {allCollapsed ? 'Expand all' : 'Collapse all'}
+          </Button>
+        </div>
       </Card>
 
       <Card className="surface-card overflow-hidden">
