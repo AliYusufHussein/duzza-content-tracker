@@ -22,11 +22,17 @@ export default function PipelinePage() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [scheduling, setScheduling] = useState<{ row: any; date: string } | null>(null);
 
   const toggle = (id: string) => setExpanded(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  const toggleGroup = (key: string) => setCollapsedGroups(prev => {
+    const next = new Set(prev);
+    next.has(key) ? next.delete(key) : next.add(key);
     return next;
   });
 
