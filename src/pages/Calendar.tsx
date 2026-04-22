@@ -379,6 +379,32 @@ export default function CalendarPage() {
           </table>
         </div>
       </Card>
+
+      <Dialog open={!!posting} onOpenChange={(o) => { if (!o) setPosting(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mark as posted</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground line-clamp-2">{posting?.row?.content}</p>
+            <div className="space-y-1.5">
+              <Label>Posted link</Label>
+              <Input
+                type="url"
+                placeholder="https://…"
+                value={posting?.link ?? ''}
+                onChange={e => setPosting(s => s ? { ...s, link: e.target.value } : s)}
+                autoFocus
+              />
+              <p className="text-[11px] text-muted-foreground">Paste the URL of the published post so you can jump back to it later.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPosting(null)}>Cancel</Button>
+            <Button onClick={confirmPosted}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
