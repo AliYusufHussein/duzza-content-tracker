@@ -303,7 +303,12 @@ export default function CalendarPage() {
                           </span>
                         </div>
                         <div className="mt-1 line-clamp-2 leading-snug">{it.content}</div>
-                        <div className="text-[10px] text-muted-foreground mt-1">{it.channel ?? '—'} · {it.platform ?? '—'}</div>
+                        <div className="flex items-center justify-between mt-1">
+                          <div className="text-[10px] text-muted-foreground">{it.channel ?? '—'} · {it.platform ?? '—'}</div>
+                          {it.posted_link && (
+                            <ExternalLink className="h-3 w-3 text-primary" />
+                          )}
+                        </div>
                       </button>
                     }
                   />
