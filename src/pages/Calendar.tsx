@@ -6,11 +6,14 @@ import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { RecordDialog, FieldDef } from '@/components/RecordDialog';
 import { Button } from '@/components/ui/button';
-import { Trash2, Clock, Upload, Download, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { Trash2, Clock, Upload, Download, ChevronLeft, ChevronRight, Pencil, ExternalLink } from 'lucide-react';
 import { PLATFORMS, suggestedPostTime } from '@/lib/automation';
 import { toast } from 'sonner';
 import { format, parseISO, startOfWeek, addDays, isSameDay, addWeeks } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const STATUSES = ['Scheduled', 'Posted'];
 
@@ -89,6 +92,7 @@ export default function CalendarPage() {
     { name: 'platform', label: 'Platform', type: 'select', options: platformsForFilter as any },
     { name: 'content', label: 'Content', type: 'textarea', required: true },
     { name: 'status', label: 'Status', type: 'select', options: STATUSES, defaultValue: 'Scheduled' },
+    { name: 'posted_link', label: 'Posted link', type: 'url', placeholder: 'https://… (required when Posted)' },
     { name: 'notes', label: 'Notes', type: 'textarea' },
   ];
 
