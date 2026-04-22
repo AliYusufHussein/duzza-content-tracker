@@ -23,6 +23,7 @@ export type Database = {
           id: string
           notes: string | null
           platform: string | null
+          posted_link: string | null
           status: string
           updated_at: string
         }
@@ -34,6 +35,7 @@ export type Database = {
           id?: string
           notes?: string | null
           platform?: string | null
+          posted_link?: string | null
           status?: string
           updated_at?: string
         }
@@ -45,6 +47,7 @@ export type Database = {
           id?: string
           notes?: string | null
           platform?: string | null
+          posted_link?: string | null
           status?: string
           updated_at?: string
         }
