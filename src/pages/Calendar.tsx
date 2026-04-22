@@ -340,9 +340,21 @@ export default function CalendarPage() {
                   <td className="px-4 py-2.5 text-xs">{r.channel ?? '—'} <span className="text-muted-foreground">· {r.platform ?? '—'}</span></td>
                   <td className="px-4 py-2.5 text-xs max-w-md truncate">{r.content}</td>
                   <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">{suggestedPostTime(r.platform)}</td>
-                  <td className="px-4 py-2.5"><StatusBadge value={r.status} /></td>
+                  <td className="px-4 py-2.5">
+                    <Select value={r.status} onValueChange={(v) => changeStatus(r, v)}>
+                      <SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </td>
                   <td className="px-4 py-2.5 text-right">
                     <div className="flex items-center justify-end gap-0.5">
+                      {r.posted_link && (
+                        <a href={r.posted_link} target="_blank" rel="noreferrer" className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground" title="Open post">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      )}
                       <RecordDialog
                         title="Edit scheduled post"
                         fields={fields}
