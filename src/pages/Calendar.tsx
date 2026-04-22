@@ -49,6 +49,7 @@ export default function CalendarPage() {
   const { rows: channels } = useTable<any>('channels');
   const [filterChannel, setFilterChannel] = useState<string>('all');
   const [weekOffset, setWeekOffset] = useState(0);
+  const [posting, setPosting] = useState<{ row: any; link: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Auto-migrate any legacy Planned/Skipped calendar rows back into the pipeline as ideas
@@ -136,6 +137,24 @@ export default function CalendarPage() {
   const remove = async (id: string) => {
     const { error } = await supabase.from('calendar').delete().eq('id', id);
     if (error) toast.error(error.message); else { toast.success('Deleted'); refresh(); }
+  };
+  const changeStatus = (row: any, newStatus: string) => {
+    if (newStatus === 'Posted' && !row.posted_link) {
+      setPosting({ row, link: '' });
+      return;
+    }
+    update(row.id, { status: newStatus });
+  };
+  const confirmPosted = async () => {
+    if (!posting) return;
+    if (!posting.link.trim()) { toast.error('Paste the post URL'); return; }
+    const { error } = await supabase.from('calendar')
+      .update({ status: 'Posted', posted_link: posting.link.trim() })
+      .eq('id', posting.row.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Marked as posted');
+    setPosting(null);
+    refresh();
   };
 
   const downloadTemplate = () => {
