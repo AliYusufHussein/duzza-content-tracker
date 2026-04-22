@@ -62,6 +62,22 @@ export default function PipelinePage() {
       .sort((a, b) => b.score - a.score);
   }, [rows, q, status]);
 
+  const grouped = useMemo(() => {
+    const map = new Map<string, any[]>();
+    filtered.forEach(r => {
+      const key = `${r.channel ?? 'Unassigned'} · ${r.platform ?? '—'}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(r);
+    });
+    return Array.from(map.entries());
+  }, [filtered]);
+
+  const allCollapsed = grouped.length > 0 && grouped.every(([k]) => collapsedGroups.has(k));
+  const toggleAll = () => {
+    if (allCollapsed) setCollapsedGroups(new Set());
+    else setCollapsedGroups(new Set(grouped.map(([k]) => k)));
+  };
+
   const create = async (v: any) => {
     const { error } = await supabase.from('pipeline').insert(v);
     if (error) toast.error(error.message); else { toast.success('Added to pipeline'); refresh(); }
