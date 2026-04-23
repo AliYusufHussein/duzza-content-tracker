@@ -21,6 +21,7 @@ export default function PipelinePage() {
   const { rows: channels } = useTable<any>('channels');
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
+  const [channelFilter, setChannelFilter] = useState('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     try {
