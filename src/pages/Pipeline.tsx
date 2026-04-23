@@ -71,13 +71,26 @@ export default function PipelinePage() {
   ];
 
   const filtered = useMemo(() => {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    let endStr: string | null = null;
+    if (rangeWeeks !== 'all' && rangeWeeks !== 'past') {
+      const end = new Date(today);
+      end.setDate(end.getDate() + parseInt(rangeWeeks, 10) * 7);
+      endStr = end.toISOString().slice(0, 10);
+    }
     return rows
       .filter(r => status === 'all' || r.status === status)
       .filter(r => channelFilter === 'all' || r.channel === channelFilter)
       .filter(r => !q || (r.idea + ' ' + (r.hook ?? '') + ' ' + (r.channel ?? '') + ' ' + (r.platform ?? '') + ' ' + (r.notes ?? '')).toLowerCase().includes(q.toLowerCase()))
+      .filter(r => {
+        if (rangeWeeks === 'all' || !r.date) return rangeWeeks === 'all';
+        if (rangeWeeks === 'past') return r.date < todayStr;
+        return r.date >= todayStr && (!endStr || r.date <= endStr);
+      })
       .map(r => ({ ...r, score: priorityScore(r), label: priorityLabel(priorityScore(r)) }))
       .sort((a, b) => b.score - a.score);
-  }, [rows, q, status, channelFilter]);
+  }, [rows, q, status, channelFilter, rangeWeeks]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, any[]>();
