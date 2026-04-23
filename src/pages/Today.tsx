@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ExternalLink, CheckCircle2, Inbox } from 'lucide-react';
+import { ExternalLink, CheckCircle2, Inbox, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
 const STATUSES = ['Planned', 'Drafting', 'Scheduled', 'Posted', 'Skipped'];
@@ -99,6 +99,21 @@ export default function TodayPage() {
                           {STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                         </SelectContent>
                       </Select>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(item.content ?? '');
+                            toast.success('Copied');
+                          } catch {
+                            toast.error('Copy failed');
+                          }
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5 mr-1" /> Copy
+                      </Button>
                       {item.status !== 'Posted' && (
                         <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => markPosted(item.id)}>
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Mark posted

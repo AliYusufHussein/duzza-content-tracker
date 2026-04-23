@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTable } from '@/hooks/useTable';
 import { PageHeader } from '@/components/PageHeader';
@@ -22,8 +22,22 @@ export default function PipelinePage() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
+    try {
+      const raw = sessionStorage.getItem('pipeline:collapsedGroups');
+      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
   const [scheduling, setScheduling] = useState<{ row: any; date: string } | null>(null);
+
+  // Persist collapsed-group state per session
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('pipeline:collapsedGroups', JSON.stringify(Array.from(collapsedGroups)));
+    } catch {}
+  }, [collapsedGroups]);
 
   const toggle = (id: string) => setExpanded(prev => {
     const next = new Set(prev);
