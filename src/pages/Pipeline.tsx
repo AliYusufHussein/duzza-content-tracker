@@ -21,6 +21,7 @@ export default function PipelinePage() {
   const { rows: channels } = useTable<any>('channels');
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
+  const [channelFilter, setChannelFilter] = useState('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     try {
@@ -71,10 +72,11 @@ export default function PipelinePage() {
   const filtered = useMemo(() => {
     return rows
       .filter(r => status === 'all' || r.status === status)
-      .filter(r => !q || (r.idea + ' ' + (r.hook ?? '') + ' ' + (r.channel ?? '')).toLowerCase().includes(q.toLowerCase()))
+      .filter(r => channelFilter === 'all' || r.channel === channelFilter)
+      .filter(r => !q || (r.idea + ' ' + (r.hook ?? '') + ' ' + (r.channel ?? '') + ' ' + (r.platform ?? '') + ' ' + (r.notes ?? '')).toLowerCase().includes(q.toLowerCase()))
       .map(r => ({ ...r, score: priorityScore(r), label: priorityLabel(priorityScore(r)) }))
       .sort((a, b) => b.score - a.score);
-  }, [rows, q, status]);
+  }, [rows, q, status, channelFilter]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, any[]>();
@@ -148,7 +150,14 @@ export default function PipelinePage() {
       />
 
       <Card className="p-3 mb-4 surface-card flex flex-col sm:flex-row gap-2">
-        <Input placeholder="Search idea, hook, channel…" value={q} onChange={e => setQ(e.target.value)} className="sm:max-w-sm" />
+        <Input placeholder="Search idea, hook, channel, platform, notes…" value={q} onChange={e => setQ(e.target.value)} className="sm:max-w-sm" />
+        <Select value={channelFilter} onValueChange={setChannelFilter}>
+          <SelectTrigger className="sm:w-44"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All channels</SelectItem>
+            {channelOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="sm:w-44"><SelectValue /></SelectTrigger>
           <SelectContent>

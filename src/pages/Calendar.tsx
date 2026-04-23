@@ -48,6 +48,7 @@ export default function CalendarPage() {
   const { rows, refresh } = useTable<any>('calendar', 'date', true);
   const { rows: channels } = useTable<any>('channels');
   const [filterChannel, setFilterChannel] = useState<string>('all');
+  const [q, setQ] = useState('');
   const [weekOffset, setWeekOffset] = useState(0);
   const [posting, setPosting] = useState<{ row: any; link: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -105,8 +106,13 @@ export default function CalendarPage() {
   ];
 
   const visibleRows = useMemo(
-    () => filterChannel === 'all' ? rows : rows.filter(r => r.channel === filterChannel),
-    [rows, filterChannel]
+    () => {
+      const ql = q.trim().toLowerCase();
+      return rows
+        .filter(r => filterChannel === 'all' || r.channel === filterChannel)
+        .filter(r => !ql || (`${r.content ?? ''} ${r.notes ?? ''} ${r.channel ?? ''} ${r.platform ?? ''}`).toLowerCase().includes(ql));
+    },
+    [rows, filterChannel, q]
   );
 
   const today = new Date();
@@ -249,12 +255,18 @@ export default function CalendarPage() {
       <Card className="surface-card p-3 mb-4 flex flex-wrap items-center gap-2">
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground mr-1">Channel</span>
         <Select value={filterChannel} onValueChange={(v) => { setFilterChannel(v); setWeekOffset(0); }}>
-          <SelectTrigger className="h-8 w-[220px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8 w-[180px] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All channels</SelectItem>
             {channelOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Input
+          placeholder="Search content, notes, platform…"
+          value={q}
+          onChange={e => setQ(e.target.value)}
+          className="h-8 w-full sm:w-64 text-xs"
+        />
         {filterChannel !== 'all' && (
           <span className="text-[11px] font-mono text-muted-foreground hidden sm:inline">
             platforms: {platformsForFilter.join(' · ') || '—'}
