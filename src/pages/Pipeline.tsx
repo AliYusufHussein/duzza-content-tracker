@@ -150,7 +150,14 @@ export default function PipelinePage() {
       />
 
       <Card className="p-3 mb-4 surface-card flex flex-col sm:flex-row gap-2">
-        <Input placeholder="Search idea, hook, channel…" value={q} onChange={e => setQ(e.target.value)} className="sm:max-w-sm" />
+        <Input placeholder="Search idea, hook, channel, platform, notes…" value={q} onChange={e => setQ(e.target.value)} className="sm:max-w-sm" />
+        <Select value={channelFilter} onValueChange={setChannelFilter}>
+          <SelectTrigger className="sm:w-44"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All channels</SelectItem>
+            {channelOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="sm:w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
