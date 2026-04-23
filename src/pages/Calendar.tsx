@@ -255,12 +255,18 @@ export default function CalendarPage() {
       <Card className="surface-card p-3 mb-4 flex flex-wrap items-center gap-2">
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground mr-1">Channel</span>
         <Select value={filterChannel} onValueChange={(v) => { setFilterChannel(v); setWeekOffset(0); }}>
-          <SelectTrigger className="h-8 w-[220px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8 w-[180px] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All channels</SelectItem>
             {channelOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Input
+          placeholder="Search content, notes, platform…"
+          value={q}
+          onChange={e => setQ(e.target.value)}
+          className="h-8 w-full sm:w-64 text-xs"
+        />
         {filterChannel !== 'all' && (
           <span className="text-[11px] font-mono text-muted-foreground hidden sm:inline">
             platforms: {platformsForFilter.join(' · ') || '—'}
