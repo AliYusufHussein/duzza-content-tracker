@@ -277,8 +277,19 @@ export default function CalendarPage() {
           placeholder="Search content, notes, platform…"
           value={q}
           onChange={e => setQ(e.target.value)}
-          className="h-8 w-full sm:w-64 text-xs"
+          className="h-8 w-full sm:w-56 text-xs"
         />
+        <Select value={rangeWeeks} onValueChange={setRangeWeeks}>
+          <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All dates</SelectItem>
+            <SelectItem value="1">Next 1 week</SelectItem>
+            <SelectItem value="2">Next 2 weeks</SelectItem>
+            <SelectItem value="4">Next 4 weeks</SelectItem>
+            <SelectItem value="12">Next 12 weeks</SelectItem>
+            <SelectItem value="past">Past only</SelectItem>
+          </SelectContent>
+        </Select>
         {filterChannel !== 'all' && (
           <span className="text-[11px] font-mono text-muted-foreground hidden sm:inline">
             platforms: {platformsForFilter.join(' · ') || '—'}
