@@ -106,8 +106,13 @@ export default function CalendarPage() {
   ];
 
   const visibleRows = useMemo(
-    () => filterChannel === 'all' ? rows : rows.filter(r => r.channel === filterChannel),
-    [rows, filterChannel]
+    () => {
+      const ql = q.trim().toLowerCase();
+      return rows
+        .filter(r => filterChannel === 'all' || r.channel === filterChannel)
+        .filter(r => !ql || (`${r.content ?? ''} ${r.notes ?? ''} ${r.channel ?? ''} ${r.platform ?? ''}`).toLowerCase().includes(ql));
+    },
+    [rows, filterChannel, q]
   );
 
   const today = new Date();
