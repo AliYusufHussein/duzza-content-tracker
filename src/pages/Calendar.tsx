@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { RecordDialog, FieldDef } from '@/components/RecordDialog';
 import { Button } from '@/components/ui/button';
-import { Trash2, Clock, Upload, Download, ChevronLeft, ChevronRight, Pencil, ExternalLink } from 'lucide-react';
+import { Trash2, Clock, Upload, Download, ChevronLeft, ChevronRight, Pencil, ExternalLink, Undo2 } from 'lucide-react';
 import { PLATFORMS, suggestedPostTime } from '@/lib/automation';
 import { toast } from 'sonner';
 import { format, parseISO, startOfWeek, addDays, isSameDay, addWeeks } from 'date-fns';
@@ -52,27 +52,34 @@ export default function CalendarPage() {
   const [posting, setPosting] = useState<{ row: any; link: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Auto-migrate any legacy Planned/Skipped calendar rows back into the pipeline as ideas
+  // Auto-migrate any legacy Planned/Skipped calendar rows back into pipeline as ideas (transactional RPC)
   useEffect(() => {
-    const legacy = rows.filter(r => r.status === 'Planned' || r.status === 'Skipped');
-    if (!legacy.length) return;
+    const hasLegacy = rows.some(r => r.status === 'Planned' || r.status === 'Skipped');
+    if (!hasLegacy) return;
     (async () => {
-      const toInsert = legacy.map(r => ({
-        idea: r.content,
-        channel: r.channel ?? null,
-        platform: r.platform ?? null,
-        date: r.date,
-        notes: r.notes ?? null,
-        status: 'Idea',
-      }));
-      const { error: insErr } = await supabase.from('pipeline').insert(toInsert);
-      if (insErr) { console.error(insErr); return; }
-      const { error: delErr } = await supabase.from('calendar').delete().in('id', legacy.map(r => r.id));
-      if (delErr) { console.error(delErr); return; }
-      toast.success(`Moved ${legacy.length} item${legacy.length !== 1 ? 's' : ''} to pipeline`);
+      const { data, error } = await (supabase.rpc as any)('migrate_legacy_calendar_to_pipeline');
+      if (error) { console.error(error); return; }
+      const moved = (data as number) ?? 0;
+      if (moved > 0) toast.success(`Moved ${moved} item${moved !== 1 ? 's' : ''} to pipeline`);
       refresh();
     })();
   }, [rows, refresh]);
+
+  const sendBackToPipeline = async (row: any) => {
+    const { error: insErr } = await supabase.from('pipeline').insert({
+      idea: row.content,
+      channel: row.channel ?? null,
+      platform: row.platform ?? null,
+      date: row.date,
+      notes: row.notes ?? null,
+      status: 'Idea',
+    });
+    if (insErr) { toast.error(insErr.message); return; }
+    const { error: delErr } = await supabase.from('calendar').delete().eq('id', row.id);
+    if (delErr) { toast.error(delErr.message); return; }
+    toast.success('Sent back to pipeline');
+    refresh();
+  };
 
   const channelOptions = useMemo(
     () => Array.from(new Set(channels.map(c => c.brand))).filter(Boolean) as string[],
@@ -106,12 +113,14 @@ export default function CalendarPage() {
   const weekStart = addWeeks(startOfWeek(today, { weekStartsOn: 1 }), weekOffset);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  // Auto-jump to the first week containing posts when filtering by a channel with no current-week content
+  // Jump target: prefer the earliest FUTURE post; fall back to earliest overall.
   const earliestDateForFilter = useMemo(() => {
     const src = filterChannel === 'all' ? rows : rows.filter(r => r.channel === filterChannel);
-    const future = src.map(r => r.date).filter(Boolean).sort();
-    return future[0];
-  }, [rows, filterChannel]);
+    const todayStr = format(today, 'yyyy-MM-dd');
+    const all = src.map(r => r.date).filter(Boolean).sort();
+    const future = all.filter(d => d >= todayStr);
+    return future[0] ?? all[0];
+  }, [rows, filterChannel, today]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, any[]>();
@@ -286,33 +295,59 @@ export default function CalendarPage() {
                 {items.length > 0 && <span className="text-[10px] font-mono text-muted-foreground">{items.length}</span>}
               </div>
               <div className="space-y-1.5">
-                {items.map(it => (
-                  <RecordDialog
-                    key={it.id}
-                    title="Edit scheduled post"
-                    fields={fields}
-                    initial={it}
-                    onSubmit={(v) => update(it.id, v)}
-                    submitLabel="Save changes"
-                    trigger={
-                      <button type="button" className="w-full text-left rounded border border-border bg-card/60 p-2 text-xs hover:bg-secondary/60 transition-colors">
-                        <div className="flex items-center justify-between gap-1">
-                          <StatusBadge value={it.status} className="text-[10px]" />
-                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground font-mono">
-                            <Clock className="h-2.5 w-2.5" />{suggestedPostTime(it.platform)}
-                          </span>
-                        </div>
-                        <div className="mt-1 line-clamp-2 leading-snug">{it.content}</div>
-                        <div className="flex items-center justify-between mt-1">
-                          <div className="text-[10px] text-muted-foreground">{it.channel ?? '—'} · {it.platform ?? '—'}</div>
-                          {it.posted_link && (
-                            <ExternalLink className="h-3 w-3 text-primary" />
-                          )}
-                        </div>
-                      </button>
-                    }
-                  />
-                ))}
+                {items.map(it => {
+                  const channelLink = channels.find(c => c.brand === it.channel && c.platform === it.platform)?.link;
+                  return (
+                    <RecordDialog
+                      key={it.id}
+                      title="Edit scheduled post"
+                      fields={fields}
+                      initial={it}
+                      onSubmit={(v) => update(it.id, v)}
+                      submitLabel="Save changes"
+                      trigger={
+                        <button type="button" className="w-full text-left rounded border border-border bg-card/60 p-2 text-xs hover:bg-secondary/60 transition-colors">
+                          <div className="flex items-center justify-between gap-1">
+                            <StatusBadge value={it.status} className="text-[10px]" />
+                            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground font-mono">
+                              <Clock className="h-2.5 w-2.5" />{suggestedPostTime(it.platform)}
+                            </span>
+                          </div>
+                          <div className="mt-1 line-clamp-2 leading-snug">{it.content}</div>
+                          <div className="flex items-center justify-between mt-1 gap-1">
+                            <div className="text-[10px] text-muted-foreground truncate">{it.channel ?? '—'} · {it.platform ?? '—'}</div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {channelLink && (
+                                <a
+                                  href={channelLink}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={e => e.stopPropagation()}
+                                  className="text-muted-foreground hover:text-primary"
+                                  title={`Open ${it.platform}`}
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              )}
+                              {it.posted_link && (
+                                <a
+                                  href={it.posted_link}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={e => e.stopPropagation()}
+                                  className="text-primary"
+                                  title="Open posted link"
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      }
+                    />
+                  );
+                })}
               </div>
             </Card>
           );
@@ -355,11 +390,22 @@ export default function CalendarPage() {
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     <div className="flex items-center justify-end gap-0.5">
+                      {(() => {
+                        const channelLink = channels.find(c => c.brand === r.channel && c.platform === r.platform)?.link;
+                        return channelLink && (
+                          <a href={channelLink} target="_blank" rel="noreferrer" className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground" title={`Open ${r.platform}`}>
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        );
+                      })()}
                       {r.posted_link && (
-                        <a href={r.posted_link} target="_blank" rel="noreferrer" className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground" title="Open post">
+                        <a href={r.posted_link} target="_blank" rel="noreferrer" className="p-1.5 rounded hover:bg-secondary text-primary" title="Open posted link">
                           <ExternalLink className="h-3.5 w-3.5" />
                         </a>
                       )}
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => sendBackToPipeline(r)} title="Send back to pipeline">
+                        <Undo2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
                       <RecordDialog
                         title="Edit scheduled post"
                         fields={fields}

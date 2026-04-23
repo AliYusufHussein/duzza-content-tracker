@@ -3,18 +3,29 @@ import { Workflow, Calendar, Radio, Sun, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { useTable } from '@/hooks/useTable';
+import { format } from 'date-fns';
 
 const nav = [
-  { to: '/', label: 'Today', icon: Sun, end: true },
-  { to: '/pipeline', label: 'Pipeline', icon: Workflow },
-  { to: '/calendar', label: 'Calendar', icon: Calendar },
-  { to: '/channels', label: 'Channels', icon: Radio },
+  { to: '/', label: 'Today', icon: Sun, end: true, key: 'today' as const },
+  { to: '/pipeline', label: 'Pipeline', icon: Workflow, key: 'pipeline' as const },
+  { to: '/calendar', label: 'Calendar', icon: Calendar, key: 'calendar' as const },
+  { to: '/channels', label: 'Channels', icon: Radio, key: 'channels' as const },
 ];
 
 export default function AppLayout() {
   const loc = useLocation();
   const { user, signOut } = useAuth();
   const current = nav.find(n => n.end ? loc.pathname === n.to : loc.pathname.startsWith(n.to));
+  const { rows: calendar } = useTable<any>('calendar', 'date', true);
+  const { rows: pipeline } = useTable<any>('pipeline', 'date', false);
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const counts: Record<string, number> = {
+    today: calendar.filter(c => c.date === today && c.status !== 'Posted').length,
+    pipeline: pipeline.length,
+    calendar: calendar.filter(c => c.status === 'Scheduled').length,
+    channels: 0,
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
@@ -30,7 +41,7 @@ export default function AppLayout() {
           </div>
         </div>
         <nav className="flex-1 px-2 py-2 space-y-0.5">
-          {nav.map(({ to, label, icon: Icon, end }) => (
+          {nav.map(({ to, label, icon: Icon, end, key }) => (
             <NavLink key={to} to={to} end={end}
               className={({ isActive }) => cn(
                 'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors',
@@ -39,7 +50,12 @@ export default function AppLayout() {
                   : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground'
               )}>
               <Icon className="h-4 w-4" />
-              {label}
+              <span className="flex-1">{label}</span>
+              {counts[key] > 0 && (
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary text-muted-foreground min-w-[20px] text-center">
+                  {counts[key]}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -67,13 +83,16 @@ export default function AppLayout() {
           </div>
           <div className="overflow-x-auto no-scrollbar border-t border-border">
             <div className="flex gap-1 px-2 py-2">
-              {nav.map(({ to, label, icon: Icon, end }) => (
+              {nav.map(({ to, label, icon: Icon, end, key }) => (
                 <NavLink key={to} to={to} end={end}
                   className={({ isActive }) => cn(
                     'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs whitespace-nowrap',
                     isActive ? 'bg-secondary text-foreground' : 'text-muted-foreground'
                   )}>
                   <Icon className="h-3.5 w-3.5" />{label}
+                  {counts[key] > 0 && (
+                    <span className="text-[9px] font-mono px-1 rounded bg-secondary/80">{counts[key]}</span>
+                  )}
                 </NavLink>
               ))}
             </div>
