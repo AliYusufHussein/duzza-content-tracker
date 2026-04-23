@@ -22,6 +22,7 @@ export default function PipelinePage() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const [channelFilter, setChannelFilter] = useState('all');
+  const [rangeWeeks, setRangeWeeks] = useState<string>('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     try {
@@ -70,13 +71,26 @@ export default function PipelinePage() {
   ];
 
   const filtered = useMemo(() => {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    let endStr: string | null = null;
+    if (rangeWeeks !== 'all' && rangeWeeks !== 'past') {
+      const end = new Date(today);
+      end.setDate(end.getDate() + parseInt(rangeWeeks, 10) * 7);
+      endStr = end.toISOString().slice(0, 10);
+    }
     return rows
       .filter(r => status === 'all' || r.status === status)
       .filter(r => channelFilter === 'all' || r.channel === channelFilter)
       .filter(r => !q || (r.idea + ' ' + (r.hook ?? '') + ' ' + (r.channel ?? '') + ' ' + (r.platform ?? '') + ' ' + (r.notes ?? '')).toLowerCase().includes(q.toLowerCase()))
+      .filter(r => {
+        if (rangeWeeks === 'all' || !r.date) return rangeWeeks === 'all';
+        if (rangeWeeks === 'past') return r.date < todayStr;
+        return r.date >= todayStr && (!endStr || r.date <= endStr);
+      })
       .map(r => ({ ...r, score: priorityScore(r), label: priorityLabel(priorityScore(r)) }))
       .sort((a, b) => b.score - a.score);
-  }, [rows, q, status, channelFilter]);
+  }, [rows, q, status, channelFilter, rangeWeeks]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, any[]>();
@@ -163,6 +177,17 @@ export default function PipelinePage() {
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
             {PIPELINE_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={rangeWeeks} onValueChange={setRangeWeeks}>
+          <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All dates</SelectItem>
+            <SelectItem value="1">Next 1 week</SelectItem>
+            <SelectItem value="2">Next 2 weeks</SelectItem>
+            <SelectItem value="4">Next 4 weeks</SelectItem>
+            <SelectItem value="12">Next 12 weeks</SelectItem>
+            <SelectItem value="past">Past only</SelectItem>
           </SelectContent>
         </Select>
         <div className="sm:ml-auto">

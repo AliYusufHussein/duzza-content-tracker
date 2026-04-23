@@ -49,6 +49,7 @@ export default function CalendarPage() {
   const { rows: channels } = useTable<any>('channels');
   const [filterChannel, setFilterChannel] = useState<string>('all');
   const [q, setQ] = useState('');
+  const [rangeWeeks, setRangeWeeks] = useState<string>('all'); // 'all' | '1' | '2' | '4' | '12' | 'past'
   const [weekOffset, setWeekOffset] = useState(0);
   const [posting, setPosting] = useState<{ row: any; link: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -108,11 +109,22 @@ export default function CalendarPage() {
   const visibleRows = useMemo(
     () => {
       const ql = q.trim().toLowerCase();
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      let endStr: string | null = null;
+      if (rangeWeeks !== 'all' && rangeWeeks !== 'past') {
+        endStr = format(addWeeks(new Date(), parseInt(rangeWeeks, 10)), 'yyyy-MM-dd');
+      }
       return rows
         .filter(r => filterChannel === 'all' || r.channel === filterChannel)
-        .filter(r => !ql || (`${r.content ?? ''} ${r.notes ?? ''} ${r.channel ?? ''} ${r.platform ?? ''}`).toLowerCase().includes(ql));
+        .filter(r => !ql || (`${r.content ?? ''} ${r.notes ?? ''} ${r.channel ?? ''} ${r.platform ?? ''}`).toLowerCase().includes(ql))
+        .filter(r => {
+          if (!r.date) return true;
+          if (rangeWeeks === 'all') return true;
+          if (rangeWeeks === 'past') return r.date < todayStr;
+          return r.date >= todayStr && (!endStr || r.date <= endStr);
+        });
     },
-    [rows, filterChannel, q]
+    [rows, filterChannel, q, rangeWeeks]
   );
 
   const today = new Date();
@@ -265,8 +277,19 @@ export default function CalendarPage() {
           placeholder="Search content, notes, platform…"
           value={q}
           onChange={e => setQ(e.target.value)}
-          className="h-8 w-full sm:w-64 text-xs"
+          className="h-8 w-full sm:w-56 text-xs"
         />
+        <Select value={rangeWeeks} onValueChange={setRangeWeeks}>
+          <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All dates</SelectItem>
+            <SelectItem value="1">Next 1 week</SelectItem>
+            <SelectItem value="2">Next 2 weeks</SelectItem>
+            <SelectItem value="4">Next 4 weeks</SelectItem>
+            <SelectItem value="12">Next 12 weeks</SelectItem>
+            <SelectItem value="past">Past only</SelectItem>
+          </SelectContent>
+        </Select>
         {filterChannel !== 'all' && (
           <span className="text-[11px] font-mono text-muted-foreground hidden sm:inline">
             platforms: {platformsForFilter.join(' · ') || '—'}
