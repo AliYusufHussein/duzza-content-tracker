@@ -179,6 +179,17 @@ export default function PipelinePage() {
             {PIPELINE_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={rangeWeeks} onValueChange={setRangeWeeks}>
+          <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All dates</SelectItem>
+            <SelectItem value="1">Next 1 week</SelectItem>
+            <SelectItem value="2">Next 2 weeks</SelectItem>
+            <SelectItem value="4">Next 4 weeks</SelectItem>
+            <SelectItem value="12">Next 12 weeks</SelectItem>
+            <SelectItem value="past">Past only</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="sm:ml-auto">
           <Button size="sm" variant="outline" onClick={toggleAll} disabled={!grouped.length}>
             {allCollapsed ? 'Expand all' : 'Collapse all'}
