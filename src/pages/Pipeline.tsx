@@ -72,10 +72,11 @@ export default function PipelinePage() {
   const filtered = useMemo(() => {
     return rows
       .filter(r => status === 'all' || r.status === status)
-      .filter(r => !q || (r.idea + ' ' + (r.hook ?? '') + ' ' + (r.channel ?? '')).toLowerCase().includes(q.toLowerCase()))
+      .filter(r => channelFilter === 'all' || r.channel === channelFilter)
+      .filter(r => !q || (r.idea + ' ' + (r.hook ?? '') + ' ' + (r.channel ?? '') + ' ' + (r.platform ?? '') + ' ' + (r.notes ?? '')).toLowerCase().includes(q.toLowerCase()))
       .map(r => ({ ...r, score: priorityScore(r), label: priorityLabel(priorityScore(r)) }))
       .sort((a, b) => b.score - a.score);
-  }, [rows, q, status]);
+  }, [rows, q, status, channelFilter]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, any[]>();
