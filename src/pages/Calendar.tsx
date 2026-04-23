@@ -109,11 +109,22 @@ export default function CalendarPage() {
   const visibleRows = useMemo(
     () => {
       const ql = q.trim().toLowerCase();
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      let endStr: string | null = null;
+      if (rangeWeeks !== 'all' && rangeWeeks !== 'past') {
+        endStr = format(addWeeks(new Date(), parseInt(rangeWeeks, 10)), 'yyyy-MM-dd');
+      }
       return rows
         .filter(r => filterChannel === 'all' || r.channel === filterChannel)
-        .filter(r => !ql || (`${r.content ?? ''} ${r.notes ?? ''} ${r.channel ?? ''} ${r.platform ?? ''}`).toLowerCase().includes(ql));
+        .filter(r => !ql || (`${r.content ?? ''} ${r.notes ?? ''} ${r.channel ?? ''} ${r.platform ?? ''}`).toLowerCase().includes(ql))
+        .filter(r => {
+          if (!r.date) return true;
+          if (rangeWeeks === 'all') return true;
+          if (rangeWeeks === 'past') return r.date < todayStr;
+          return r.date >= todayStr && (!endStr || r.date <= endStr);
+        });
     },
-    [rows, filterChannel, q]
+    [rows, filterChannel, q, rangeWeeks]
   );
 
   const today = new Date();
