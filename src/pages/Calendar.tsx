@@ -65,7 +65,22 @@ export default function CalendarPage() {
   const [posting, setPosting] = useState<{ row: any; link: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Auto-migrate any legacy Planned/Skipped calendar rows back into pipeline as ideas (transactional RPC)
+  // Persist filter state to sessionStorage
+  useEffect(() => {
+    try { sessionStorage.setItem('calendar:filterChannel', filterChannel); } catch {}
+  }, [filterChannel]);
+  useEffect(() => {
+    try { sessionStorage.setItem('calendar:filterPlatform', filterPlatform); } catch {}
+  }, [filterPlatform]);
+  useEffect(() => {
+    try { sessionStorage.setItem('calendar:q', q); } catch {}
+  }, [q]);
+  useEffect(() => {
+    try { sessionStorage.setItem('calendar:rangeWeeks', rangeWeeks); } catch {}
+  }, [rangeWeeks]);
+  useEffect(() => {
+    try { sessionStorage.setItem('calendar:weekOffset', String(weekOffset)); } catch {}
+  }, [weekOffset]);
   useEffect(() => {
     const hasLegacy = rows.some(r => r.status === 'Planned' || r.status === 'Skipped');
     if (!hasLegacy) return;

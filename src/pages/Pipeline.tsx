@@ -45,6 +45,23 @@ export default function PipelinePage() {
   });
   const [scheduling, setScheduling] = useState<{ row: any; date: string } | null>(null);
 
+  // Persist filter state to sessionStorage
+  useEffect(() => {
+    try { sessionStorage.setItem('pipeline:q', q); } catch {}
+  }, [q]);
+  useEffect(() => {
+    try { sessionStorage.setItem('pipeline:status', status); } catch {}
+  }, [status]);
+  useEffect(() => {
+    try { sessionStorage.setItem('pipeline:channelFilter', channelFilter); } catch {}
+  }, [channelFilter]);
+  useEffect(() => {
+    try { sessionStorage.setItem('pipeline:platformFilter', platformFilter); } catch {}
+  }, [platformFilter]);
+  useEffect(() => {
+    try { sessionStorage.setItem('pipeline:rangeWeeks', rangeWeeks); } catch {}
+  }, [rangeWeeks]);
+
   // Persist collapsed-group state per session
   useEffect(() => {
     try {
