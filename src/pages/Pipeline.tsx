@@ -22,6 +22,7 @@ export default function PipelinePage() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const [channelFilter, setChannelFilter] = useState('all');
+  const [platformFilter, setPlatformFilter] = useState('all');
   const [rangeWeeks, setRangeWeeks] = useState<string>('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {

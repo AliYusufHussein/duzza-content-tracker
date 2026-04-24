@@ -48,6 +48,7 @@ export default function CalendarPage() {
   const { rows, refresh } = useTable<any>('calendar', 'date', true);
   const { rows: channels } = useTable<any>('channels');
   const [filterChannel, setFilterChannel] = useState<string>('all');
+  const [filterPlatform, setFilterPlatform] = useState<string>('all');
   const [q, setQ] = useState('');
   const [rangeWeeks, setRangeWeeks] = useState<string>('all'); // 'all' | '1' | '2' | '4' | '12' | 'past'
   const [weekOffset, setWeekOffset] = useState(0);
