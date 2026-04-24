@@ -19,11 +19,21 @@ type Pipeline = any;
 export default function PipelinePage() {
   const { rows, refresh } = useTable<Pipeline>('pipeline', 'date', false);
   const { rows: channels } = useTable<any>('channels');
-  const [q, setQ] = useState('');
-  const [status, setStatus] = useState('all');
-  const [channelFilter, setChannelFilter] = useState('all');
-  const [platformFilter, setPlatformFilter] = useState('all');
-  const [rangeWeeks, setRangeWeeks] = useState<string>('all');
+  const [q, setQ] = useState(() => {
+    try { return sessionStorage.getItem('pipeline:q') ?? ''; } catch { return ''; }
+  });
+  const [status, setStatus] = useState<string>(() => {
+    try { return sessionStorage.getItem('pipeline:status') ?? 'all'; } catch { return 'all'; }
+  });
+  const [channelFilter, setChannelFilter] = useState<string>(() => {
+    try { return sessionStorage.getItem('pipeline:channelFilter') ?? 'all'; } catch { return 'all'; }
+  });
+  const [platformFilter, setPlatformFilter] = useState<string>(() => {
+    try { return sessionStorage.getItem('pipeline:platformFilter') ?? 'all'; } catch { return 'all'; }
+  });
+  const [rangeWeeks, setRangeWeeks] = useState<string>(() => {
+    try { return sessionStorage.getItem('pipeline:rangeWeeks') ?? 'all'; } catch { return 'all'; }
+  });
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     try {
@@ -34,6 +44,23 @@ export default function PipelinePage() {
     }
   });
   const [scheduling, setScheduling] = useState<{ row: any; date: string } | null>(null);
+
+  // Persist filter state to sessionStorage
+  useEffect(() => {
+    try { sessionStorage.setItem('pipeline:q', q); } catch {}
+  }, [q]);
+  useEffect(() => {
+    try { sessionStorage.setItem('pipeline:status', status); } catch {}
+  }, [status]);
+  useEffect(() => {
+    try { sessionStorage.setItem('pipeline:channelFilter', channelFilter); } catch {}
+  }, [channelFilter]);
+  useEffect(() => {
+    try { sessionStorage.setItem('pipeline:platformFilter', platformFilter); } catch {}
+  }, [platformFilter]);
+  useEffect(() => {
+    try { sessionStorage.setItem('pipeline:rangeWeeks', rangeWeeks); } catch {}
+  }, [rangeWeeks]);
 
   // Persist collapsed-group state per session
   useEffect(() => {

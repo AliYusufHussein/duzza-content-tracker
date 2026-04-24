@@ -47,15 +47,40 @@ function parseCSV(text: string): Record<string, string>[] {
 export default function CalendarPage() {
   const { rows, refresh } = useTable<any>('calendar', 'date', true);
   const { rows: channels } = useTable<any>('channels');
-  const [filterChannel, setFilterChannel] = useState<string>('all');
-  const [filterPlatform, setFilterPlatform] = useState<string>('all');
-  const [q, setQ] = useState('');
-  const [rangeWeeks, setRangeWeeks] = useState<string>('all'); // 'all' | '1' | '2' | '4' | '12' | 'past'
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [filterChannel, setFilterChannel] = useState<string>(() => {
+    try { return sessionStorage.getItem('calendar:filterChannel') ?? 'all'; } catch { return 'all'; }
+  });
+  const [filterPlatform, setFilterPlatform] = useState<string>(() => {
+    try { return sessionStorage.getItem('calendar:filterPlatform') ?? 'all'; } catch { return 'all'; }
+  });
+  const [q, setQ] = useState(() => {
+    try { return sessionStorage.getItem('calendar:q') ?? ''; } catch { return ''; }
+  });
+  const [rangeWeeks, setRangeWeeks] = useState<string>(() => {
+    try { return sessionStorage.getItem('calendar:rangeWeeks') ?? 'all'; } catch { return 'all'; }
+  });
+  const [weekOffset, setWeekOffset] = useState<number>(() => {
+    try { return parseInt(sessionStorage.getItem('calendar:weekOffset') ?? '0', 10); } catch { return 0; }
+  });
   const [posting, setPosting] = useState<{ row: any; link: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Auto-migrate any legacy Planned/Skipped calendar rows back into pipeline as ideas (transactional RPC)
+  // Persist filter state to sessionStorage
+  useEffect(() => {
+    try { sessionStorage.setItem('calendar:filterChannel', filterChannel); } catch {}
+  }, [filterChannel]);
+  useEffect(() => {
+    try { sessionStorage.setItem('calendar:filterPlatform', filterPlatform); } catch {}
+  }, [filterPlatform]);
+  useEffect(() => {
+    try { sessionStorage.setItem('calendar:q', q); } catch {}
+  }, [q]);
+  useEffect(() => {
+    try { sessionStorage.setItem('calendar:rangeWeeks', rangeWeeks); } catch {}
+  }, [rangeWeeks]);
+  useEffect(() => {
+    try { sessionStorage.setItem('calendar:weekOffset', String(weekOffset)); } catch {}
+  }, [weekOffset]);
   useEffect(() => {
     const hasLegacy = rows.some(r => r.status === 'Planned' || r.status === 'Skipped');
     if (!hasLegacy) return;
