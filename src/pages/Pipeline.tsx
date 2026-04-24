@@ -83,6 +83,7 @@ export default function PipelinePage() {
     return rows
       .filter(r => status === 'all' || r.status === status)
       .filter(r => channelFilter === 'all' || r.channel === channelFilter)
+      .filter(r => platformFilter === 'all' || r.platform === platformFilter)
       .filter(r => !q || (r.idea + ' ' + (r.hook ?? '') + ' ' + (r.channel ?? '') + ' ' + (r.platform ?? '') + ' ' + (r.notes ?? '')).toLowerCase().includes(q.toLowerCase()))
       .filter(r => {
         if (rangeWeeks === 'all' || !r.date) return rangeWeeks === 'all';
@@ -91,7 +92,7 @@ export default function PipelinePage() {
       })
       .map(r => ({ ...r, score: priorityScore(r), label: priorityLabel(priorityScore(r)) }))
       .sort((a, b) => b.score - a.score);
-  }, [rows, q, status, channelFilter, rangeWeeks]);
+  }, [rows, q, status, channelFilter, platformFilter, rangeWeeks]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, any[]>();

@@ -117,6 +117,7 @@ export default function CalendarPage() {
       }
       return rows
         .filter(r => filterChannel === 'all' || r.channel === filterChannel)
+        .filter(r => filterPlatform === 'all' || r.platform === filterPlatform)
         .filter(r => !ql || (`${r.content ?? ''} ${r.notes ?? ''} ${r.channel ?? ''} ${r.platform ?? ''}`).toLowerCase().includes(ql))
         .filter(r => {
           if (!r.date) return true;
@@ -125,7 +126,7 @@ export default function CalendarPage() {
           return r.date >= todayStr && (!endStr || r.date <= endStr);
         });
     },
-    [rows, filterChannel, q, rangeWeeks]
+    [rows, filterChannel, filterPlatform, q, rangeWeeks]
   );
 
   const today = new Date();
