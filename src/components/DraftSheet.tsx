@@ -221,30 +221,55 @@ export function DraftSheet({
                   {drafts.length === 0 && (
                     <div className="text-xs text-muted-foreground p-3">No versions yet.</div>
                   )}
-                  {drafts.map((d, i) => (
-                    <div key={d.id} className="rounded border border-border bg-background p-2.5 space-y-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant={d.source === 'ai' ? 'default' : 'secondary'} className="text-[10px] h-4 px-1.5">
-                          {d.source === 'ai' ? 'AI' : 'Manual'}
-                        </Badge>
-                        {i === 0 && <Badge variant="outline" className="text-[10px] h-4 px-1.5">Latest</Badge>}
-                        <span className="text-[10px] text-muted-foreground ml-auto">
-                          {formatDistanceToNow(new Date(d.created_at), { addSuffix: true })}
-                        </span>
-                      </div>
-                      <div className="text-xs line-clamp-3 text-muted-foreground whitespace-pre-wrap">
-                        {d.body}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={() => restore(d)}>
-                          <RotateCcw className="h-3 w-3" />Restore
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0 ml-auto" onClick={() => removeDraft(d.id)}>
-                          <Trash2 className="h-3 w-3 text-muted-foreground" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                  <TooltipProvider delayDuration={200}>
+                    {drafts.map((d, i) => {
+                      const versionNumber = drafts.length - i;
+                      // Find if this is the very first AI draft chronologically
+                      const firstAiIndex = [...drafts].reverse().findIndex(x => x.source === 'ai');
+                      const firstAiId = firstAiIndex >= 0 ? [...drafts].reverse()[firstAiIndex]?.id : null;
+                      const isFirstAi = d.source === 'ai' && d.id === firstAiId;
+                      const action = actionLabel(d, isFirstAi);
+                      const model = shortModel(d.model);
+                      const created = new Date(d.created_at);
+                      return (
+                        <div key={d.id} className="rounded border border-border bg-background p-2.5 space-y-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <Badge variant="outline" className="text-[10px] h-4 px-1.5 font-mono">
+                              v{versionNumber}
+                            </Badge>
+                            <Badge variant={d.source === 'ai' ? 'default' : 'secondary'} className="text-[10px] h-4 px-1.5">
+                              {action}
+                            </Badge>
+                            {i === 0 && <Badge variant="outline" className="text-[10px] h-4 px-1.5">Latest</Badge>}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                            {model && <span className="font-mono truncate" title={d.model ?? ''}>{model}</span>}
+                            {model && <span>·</span>}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help">{formatDistanceToNow(created, { addSuffix: true })}</span>
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="text-[10px] font-mono">
+                                {format(created, 'PPpp')}
+                              </TooltipContent>
+                            </Tooltip>
+                            <span className="ml-auto font-mono">{d.body.length}c</span>
+                          </div>
+                          <div className="text-xs line-clamp-3 text-muted-foreground whitespace-pre-wrap">
+                            {d.body}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={() => restore(d)}>
+                              <RotateCcw className="h-3 w-3" />Restore
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 ml-auto" onClick={() => removeDraft(d.id)}>
+                              <Trash2 className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </TooltipProvider>
                 </div>
               </ScrollArea>
             </div>
