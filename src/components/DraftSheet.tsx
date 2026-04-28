@@ -8,7 +8,29 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Sparkles, Save, Copy, History, RotateCcw, Trash2, Loader2 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+// Friendly model name from gateway slug like "google/gemini-3-flash-preview"
+function shortModel(model: string | null | undefined): string | null {
+  if (!model) return null;
+  const tail = model.includes('/') ? model.split('/').pop()! : model;
+  return tail
+    .replace(/-preview$/i, '')
+    .replace(/-/g, ' ')
+    .replace(/\bgemini\b/i, 'Gemini')
+    .replace(/\bgpt\b/i, 'GPT')
+    .replace(/\bflash\b/i, 'Flash')
+    .replace(/\bpro\b/i, 'Pro')
+    .replace(/\blite\b/i, 'Lite')
+    .replace(/\bmini\b/i, 'Mini')
+    .replace(/\bnano\b/i, 'Nano');
+}
+
+function actionLabel(d: { source: string }, isFirstAi: boolean): string {
+  if (d.source === 'ai') return isFirstAi ? 'Generated' : 'Regenerated';
+  return 'Manual save';
+}
 
 type Draft = {
   id: string;
