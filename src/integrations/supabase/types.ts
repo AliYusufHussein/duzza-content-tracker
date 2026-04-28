@@ -146,6 +146,47 @@ export type Database = {
         }
         Relationships: []
       }
+      pipeline_drafts: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          model: string | null
+          owner_id: string | null
+          pipeline_id: string
+          prompt_meta: Json | null
+          source: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          owner_id?: string | null
+          pipeline_id: string
+          prompt_meta?: Json | null
+          source?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          owner_id?: string | null
+          pipeline_id?: string
+          prompt_meta?: Json | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_drafts_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
