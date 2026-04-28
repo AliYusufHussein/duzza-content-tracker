@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StatusBadge } from '@/components/StatusBadge';
 import { RecordDialog, FieldDef } from '@/components/RecordDialog';
 import { Button } from '@/components/ui/button';
-import { Trash2, ExternalLink, ChevronRight, Pencil } from 'lucide-react';
+import { Trash2, ExternalLink, ChevronRight, Pencil, Sparkles } from 'lucide-react';
+import { DraftSheet } from '@/components/DraftSheet';
 import { PIPELINE_STATUSES, PILLARS, FORMATS, PLATFORMS, priorityScore, priorityLabel } from '@/lib/automation';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -44,6 +45,7 @@ export default function PipelinePage() {
     }
   });
   const [scheduling, setScheduling] = useState<{ row: any; date: string } | null>(null);
+  const [draftRow, setDraftRow] = useState<any | null>(null);
 
   // Persist filter state to sessionStorage
   useEffect(() => {
@@ -312,6 +314,9 @@ export default function PipelinePage() {
                                     <ExternalLink className="h-3.5 w-3.5" />
                                   </a>
                                 )}
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setDraftRow(r)} title="Open draft editor">
+                                  <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                                </Button>
                                 <RecordDialog
                                   title="Edit pipeline item"
                                   fields={fields}
@@ -387,6 +392,12 @@ export default function PipelinePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DraftSheet
+        row={draftRow}
+        open={!!draftRow}
+        onOpenChange={(o) => { if (!o) setDraftRow(null); }}
+      />
     </>
   );
 }
