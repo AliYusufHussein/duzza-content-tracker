@@ -47,10 +47,12 @@ export function DraftSheet({
   row,
   open,
   onOpenChange,
+  onPushed,
 }: {
   row: any | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onPushed?: () => void;
 }) {
   const [body, setBody] = useState('');
   const [drafts, setDrafts] = useState<Draft[]>([]);
