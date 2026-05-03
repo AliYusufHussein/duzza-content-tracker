@@ -158,6 +158,31 @@ export function DraftSheet({
     toast.success('Copied');
   };
 
+  const confirmPushToCalendar = async () => {
+    if (!pushing) return;
+    if (!body.trim()) { toast.error('Draft is empty'); return; }
+    if (!pushing.date) { toast.error('Pick a date'); return; }
+    // Save current body as a manual version if it differs from latest
+    const latest = drafts[0];
+    if (!latest || latest.body !== body) {
+      await supabase.from('pipeline_drafts').insert({ pipeline_id: row.id, body, source: 'manual' });
+    }
+    const { error: insErr } = await supabase.from('calendar').insert({
+      date: pushing.date,
+      channel: row.channel ?? null,
+      platform: row.platform ?? null,
+      content: body,
+      status: 'Scheduled',
+      notes: row.notes ?? null,
+    });
+    if (insErr) { toast.error(insErr.message); return; }
+    const { error: delErr } = await supabase.from('pipeline').delete().eq('id', row.id);
+    if (delErr) { toast.error(delErr.message); return; }
+    toast.success('Pushed to calendar');
+    setPushing(null);
+    onOpenChange(false);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-2xl flex flex-col gap-0 p-0">
