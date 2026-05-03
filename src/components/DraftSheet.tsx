@@ -57,6 +57,7 @@ export function DraftSheet({
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [pushing, setPushing] = useState<{ date: string } | null>(null);
 
   // Load drafts when row changes
   useEffect(() => {
