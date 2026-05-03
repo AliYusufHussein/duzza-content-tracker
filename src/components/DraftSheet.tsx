@@ -313,6 +313,32 @@ export function DraftSheet({
           )}
         </div>
       </SheetContent>
+
+      <Dialog open={!!pushing} onOpenChange={(o) => { if (!o) setPushing(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Push to calendar</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              The current draft will be scheduled on the calendar and removed from the pipeline.
+              Unsaved changes are saved as a new version first.
+            </p>
+            <div className="space-y-1.5">
+              <Label>Post date</Label>
+              <Input
+                type="date"
+                value={pushing?.date ?? ''}
+                onChange={e => setPushing(s => s ? { ...s, date: e.target.value } : s)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPushing(null)}>Cancel</Button>
+            <Button onClick={confirmPushToCalendar}>Schedule</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }
