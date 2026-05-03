@@ -182,6 +182,7 @@ export function DraftSheet({
     if (delErr) { toast.error(delErr.message); return; }
     toast.success('Pushed to calendar');
     setPushing(null);
+    onPushed?.();
     onOpenChange(false);
   };
 
