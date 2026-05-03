@@ -215,6 +215,15 @@ export function DraftSheet({
           </Button>
           <Button
             size="sm"
+            variant="default"
+            onClick={() => setPushing({ date: row.date || new Date().toISOString().slice(0, 10) })}
+            disabled={!body.trim()}
+            title="Move this item to the calendar with the current draft as content"
+          >
+            <CalendarPlus className="h-4 w-4" />Push to calendar
+          </Button>
+          <Button
+            size="sm"
             variant="ghost"
             className="ml-auto"
             onClick={() => setShowHistory(v => !v)}
