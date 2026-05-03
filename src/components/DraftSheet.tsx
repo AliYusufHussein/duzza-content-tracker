@@ -7,7 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Sparkles, Save, Copy, History, RotateCcw, Trash2, Loader2 } from 'lucide-react';
+import { Sparkles, Save, Copy, History, RotateCcw, Trash2, Loader2, CalendarPlus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -45,16 +47,19 @@ export function DraftSheet({
   row,
   open,
   onOpenChange,
+  onPushed,
 }: {
   row: any | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onPushed?: () => void;
 }) {
   const [body, setBody] = useState('');
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [pushing, setPushing] = useState<{ date: string } | null>(null);
 
   // Load drafts when row changes
   useEffect(() => {
@@ -155,6 +160,32 @@ export function DraftSheet({
     toast.success('Copied');
   };
 
+  const confirmPushToCalendar = async () => {
+    if (!pushing) return;
+    if (!body.trim()) { toast.error('Draft is empty'); return; }
+    if (!pushing.date) { toast.error('Pick a date'); return; }
+    // Save current body as a manual version if it differs from latest
+    const latest = drafts[0];
+    if (!latest || latest.body !== body) {
+      await supabase.from('pipeline_drafts').insert({ pipeline_id: row.id, body, source: 'manual' });
+    }
+    const { error: insErr } = await supabase.from('calendar').insert({
+      date: pushing.date,
+      channel: row.channel ?? null,
+      platform: row.platform ?? null,
+      content: body,
+      status: 'Scheduled',
+      notes: row.notes ?? null,
+    });
+    if (insErr) { toast.error(insErr.message); return; }
+    const { error: delErr } = await supabase.from('pipeline').delete().eq('id', row.id);
+    if (delErr) { toast.error(delErr.message); return; }
+    toast.success('Pushed to calendar');
+    setPushing(null);
+    onPushed?.();
+    onOpenChange(false);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-2xl flex flex-col gap-0 p-0">
@@ -184,6 +215,15 @@ export function DraftSheet({
           </Button>
           <Button size="sm" variant="ghost" onClick={copy} disabled={!body.trim()}>
             <Copy className="h-4 w-4" />Copy
+          </Button>
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => setPushing({ date: row.date || new Date().toISOString().slice(0, 10) })}
+            disabled={!body.trim()}
+            title="Move this item to the calendar with the current draft as content"
+          >
+            <CalendarPlus className="h-4 w-4" />Push to calendar
           </Button>
           <Button
             size="sm"
@@ -276,6 +316,32 @@ export function DraftSheet({
           )}
         </div>
       </SheetContent>
+
+      <Dialog open={!!pushing} onOpenChange={(o) => { if (!o) setPushing(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Push to calendar</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              The current draft will be scheduled on the calendar and removed from the pipeline.
+              Unsaved changes are saved as a new version first.
+            </p>
+            <div className="space-y-1.5">
+              <Label>Post date</Label>
+              <Input
+                type="date"
+                value={pushing?.date ?? ''}
+                onChange={e => setPushing(s => s ? { ...s, date: e.target.value } : s)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPushing(null)}>Cancel</Button>
+            <Button onClick={confirmPushToCalendar}>Schedule</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }

@@ -397,6 +397,7 @@ export default function PipelinePage() {
         row={draftRow}
         open={!!draftRow}
         onOpenChange={(o) => { if (!o) setDraftRow(null); }}
+        onPushed={refresh}
       />
     </>
   );
