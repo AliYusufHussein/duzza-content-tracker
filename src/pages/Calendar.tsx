@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const STATUSES = ['Scheduled', 'Posted'];
+const STATUSES = ['Scheduled', 'Posted', 'Failed'];
 
 // Minimal CSV parser supporting quoted fields and commas inside quotes
 function parseCSV(text: string): Record<string, string>[] {

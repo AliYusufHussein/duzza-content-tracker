@@ -7,6 +7,8 @@ const colorMap: Record<string, string> = {
   Scheduled: 'bg-status-scheduled/15 text-status-scheduled border-status-scheduled/30',
   Posted: 'bg-status-posted/15 text-status-posted border-status-posted/30',
   Repurposed: 'bg-status-repurposed/15 text-status-repurposed border-status-repurposed/30',
+  Polishing: 'bg-status-repurposed/15 text-status-repurposed border-status-repurposed/30',
+  Failed: 'bg-destructive/15 text-destructive border-destructive/30',
   Planned: 'bg-status-scheduled/15 text-status-scheduled border-status-scheduled/30',
   Done: 'bg-status-posted/15 text-status-posted border-status-posted/30',
   Raw: 'bg-status-idea/15 text-status-idea border-status-idea/30',
