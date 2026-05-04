@@ -9,10 +9,10 @@ export const FORMAT_WEIGHT: Record<string, number> = {
 };
 
 export const STATUS_WEIGHT: Record<string, number> = {
-  Idea: 1, Drafting: 2, Scheduled: 3, Posted: 4, Repurposed: 5,
+  Idea: 1, Drafting: 2, Scheduled: 3, Posted: 4, Polishing: 5,
 };
 
-export const PIPELINE_STATUSES = ['Idea', 'Drafting', 'Scheduled', 'Posted', 'Repurposed'] as const;
+export const PIPELINE_STATUSES = ['Idea', 'Drafting', 'Polishing', 'Scheduled', 'Posted'] as const;
 export const IDEA_STATUSES = ['Raw', 'Refined', 'In Pipeline', 'Used'] as const;
 export const PLATFORMS = ['Telegram', 'X (Twitter)', 'Blog', 'YouTube', 'Instagram', 'WhatsApp'] as const;
 export const PILLARS = ['Finance', 'Education', 'Tech', 'Community', 'Music', 'Writing', 'Business'] as const;
