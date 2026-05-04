@@ -186,6 +186,22 @@ export default function PipelinePage() {
     if (error) toast.error(error.message); else { toast.success('Deleted'); refresh(); }
   };
 
+  const sendToPolisher = async (r: any) => {
+    const { error: insErr } = await (supabase as any).from('polisher_queue').insert({
+      pipeline_id: r.id,
+      idea: r.idea ?? null,
+      channel: r.channel ?? null,
+      platform: r.platform ?? null,
+      format: r.format ?? null,
+      hook: r.hook ?? null,
+    });
+    if (insErr) { toast.error(insErr.message); return; }
+    const { error: updErr } = await supabase.from('pipeline').update({ status: 'Polishing' }).eq('id', r.id);
+    if (updErr) { toast.error(updErr.message); return; }
+    toast.success('Sent to Polisher');
+    refresh();
+  };
+
   return (
     <>
       <PageHeader
@@ -313,6 +329,11 @@ export default function PipelinePage() {
                                   <a href={r.posted_link} target="_blank" rel="noreferrer" className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground">
                                     <ExternalLink className="h-3.5 w-3.5" />
                                   </a>
+                                )}
+                                {r.status === 'Drafting' && (
+                                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => sendToPolisher(r)} title="Send to Polisher">
+                                    <Send className="h-3 w-3 mr-1" />Polisher
+                                  </Button>
                                 )}
                                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setDraftRow(r)} title="Open draft editor">
                                   <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
