@@ -25,6 +25,7 @@ export type Database = {
           owner_id: string | null
           platform: string | null
           posted_link: string | null
+          source: string | null
           status: string
           updated_at: string
         }
@@ -38,6 +39,7 @@ export type Database = {
           owner_id?: string | null
           platform?: string | null
           posted_link?: string | null
+          source?: string | null
           status?: string
           updated_at?: string
         }
@@ -51,6 +53,7 @@ export type Database = {
           owner_id?: string | null
           platform?: string | null
           posted_link?: string | null
+          source?: string | null
           status?: string
           updated_at?: string
         }
@@ -180,6 +183,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "pipeline_drafts_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polisher_queue: {
+        Row: {
+          article_id: string | null
+          channel: string | null
+          created_at: string
+          format: string | null
+          hook: string | null
+          id: string
+          idea: string | null
+          pipeline_id: string | null
+          platform: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          article_id?: string | null
+          channel?: string | null
+          created_at?: string
+          format?: string | null
+          hook?: string | null
+          id?: string
+          idea?: string | null
+          pipeline_id?: string | null
+          platform?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          article_id?: string | null
+          channel?: string | null
+          created_at?: string
+          format?: string | null
+          hook?: string | null
+          id?: string
+          idea?: string | null
+          pipeline_id?: string | null
+          platform?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "polisher_queue_pipeline_id_fkey"
             columns: ["pipeline_id"]
             isOneToOne: false
             referencedRelation: "pipeline"
