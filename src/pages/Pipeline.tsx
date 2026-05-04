@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StatusBadge } from '@/components/StatusBadge';
 import { RecordDialog, FieldDef } from '@/components/RecordDialog';
 import { Button } from '@/components/ui/button';
-import { Trash2, ExternalLink, ChevronRight, Pencil, Sparkles } from 'lucide-react';
+import { Trash2, ExternalLink, ChevronRight, Pencil, Sparkles, Send } from 'lucide-react';
 import { DraftSheet } from '@/components/DraftSheet';
 import { PIPELINE_STATUSES, PILLARS, FORMATS, PLATFORMS, priorityScore, priorityLabel } from '@/lib/automation';
 import { toast } from 'sonner';
