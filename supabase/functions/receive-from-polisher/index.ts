@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { pipeline_id, article_id, channel, platform, content, date, source } = body ?? {};
+    const { pipeline_id, article_id, channel, platform, content, date } = body ?? {};
 
     if (!content || !date) {
       return new Response(JSON.stringify({ error: 'content and date are required' }), {
@@ -34,15 +34,18 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    const contentStr = String(content);
+
     const { data, error } = await supabase
-      .from('calendar')
+      .from('pipeline')
       .insert({
-        date,
+        idea: contentStr.slice(0, 500),
         channel: channel ?? null,
         platform: platform ?? null,
-        content,
-        status: 'Scheduled',
-        source: source ?? 'polisher',
+        hook: contentStr.slice(0, 280),
+        date,
+        status: 'Drafting',
+        notes: 'From Polisher',
       })
       .select('id')
       .single();
@@ -54,7 +57,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Best-effort: mark polisher_queue entry done if we can find it
+    // Best-effort: mark polisher_queue entry done
     if (pipeline_id || article_id) {
       try {
         const q = supabase.from('polisher_queue').update({
@@ -69,7 +72,7 @@ Deno.serve(async (req) => {
       } catch (_) { /* ignore */ }
     }
 
-    return new Response(JSON.stringify({ success: true, calendar_id: data.id }), {
+    return new Response(JSON.stringify({ success: true, pipeline_id: data.id }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
