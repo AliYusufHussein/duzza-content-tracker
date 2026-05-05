@@ -2,3 +2,6 @@ project_id = "ckuqonmxezoscasdbjhm"
 
 [functions.receive-from-polisher]
 verify_jwt = false
+
+[functions.serve-polisher-queue]
+verify_jwt = false
