@@ -35,26 +35,49 @@ Deno.serve(async (req) => {
     );
 
     const contentStr = String(content);
+    let resultId: string;
 
-    const { data, error } = await supabase
-      .from('pipeline')
-      .insert({
-        idea: contentStr.slice(0, 500),
-        channel: channel ?? null,
-        platform: platform ?? null,
-        hook: contentStr.slice(0, 280),
-        date,
-        status: 'Drafting',
-        notes: 'From Polisher',
-      })
-      .select('id')
-      .single();
+    if (pipeline_id) {
+      const { data, error } = await supabase
+        .from('pipeline')
+        .update({
+          hook: contentStr.slice(0, 280),
+          status: 'Polishing',
+          notes: 'From Polisher',
+        })
+        .eq('id', pipeline_id)
+        .select('id')
+        .single();
 
-    if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      resultId = data.id;
+    } else {
+      const { data, error } = await supabase
+        .from('pipeline')
+        .insert({
+          idea: contentStr.slice(0, 500),
+          channel: channel ?? null,
+          platform: platform ?? null,
+          hook: contentStr.slice(0, 280),
+          date,
+          status: 'Drafting',
+          notes: 'From Polisher',
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      resultId = data.id;
     }
 
     // Best-effort: mark polisher_queue entry done
@@ -72,7 +95,7 @@ Deno.serve(async (req) => {
       } catch (_) { /* ignore */ }
     }
 
-    return new Response(JSON.stringify({ success: true, pipeline_id: data.id }), {
+    return new Response(JSON.stringify({ success: true, pipeline_id: resultId }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
