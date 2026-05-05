@@ -22,8 +22,15 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { pipeline_id, article_id, channel, platform, content, date } = body ?? {};
 
-    if (!content || !date) {
-      return new Response(JSON.stringify({ error: 'content and date are required' }), {
+    if (!content) {
+      return new Response(JSON.stringify({ error: 'content is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!pipeline_id && !date) {
+      return new Response(JSON.stringify({ error: 'date is required when pipeline_id is not provided' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
