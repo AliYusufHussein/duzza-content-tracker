@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
       } catch (_) { /* ignore */ }
     }
 
-    return new Response(JSON.stringify({ success: true, pipeline_id: data.id }), {
+    return new Response(JSON.stringify({ success: true, pipeline_id: resultId }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
