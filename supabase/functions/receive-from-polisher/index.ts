@@ -51,6 +51,9 @@ Deno.serve(async (req) => {
           hook: contentStr.slice(0, 280),
           status: 'Polishing',
           notes: 'From Polisher',
+          channel: channel ?? null,
+          platform: platform ?? null,
+          date: date,
         })
         .eq('id', pipeline_id)
         .select('id')
