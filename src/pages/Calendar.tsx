@@ -368,54 +368,49 @@ export default function CalendarPage() {
                 {items.map(it => {
                   const channelLink = channels.find(c => c.brand === it.channel && c.platform === it.platform)?.link;
                   return (
-                    <RecordDialog
+                    <button
                       key={it.id}
-                      title="Edit scheduled post"
-                      fields={fields}
-                      initial={it}
-                      onSubmit={(v) => update(it.id, v)}
-                      submitLabel="Save changes"
-                      trigger={
-                        <button type="button" className="w-full text-left rounded border border-border bg-card/60 p-2 text-xs hover:bg-secondary/60 transition-colors">
-                          <div className="flex items-center justify-between gap-1">
-                            <StatusBadge value={it.status} className="text-[10px]" />
-                            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground font-mono">
-                              <Clock className="h-2.5 w-2.5" />{suggestedPostTime(it.platform)}
-                            </span>
-                          </div>
-                          <div className="mt-1 line-clamp-2 leading-snug">{it.content}</div>
-                          <div className="flex items-center justify-between mt-1 gap-1">
-                            <div className="text-[10px] text-muted-foreground truncate">{it.channel ?? '—'} · {it.platform ?? '—'}</div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              {channelLink && (
-                                <a
-                                  href={channelLink}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  onClick={e => e.stopPropagation()}
-                                  className="text-muted-foreground hover:text-primary"
-                                  title={`Open ${it.platform}`}
-                                >
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
-                              )}
-                              {it.posted_link && (
-                                <a
-                                  href={it.posted_link}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  onClick={e => e.stopPropagation()}
-                                  className="text-primary"
-                                  title="Open posted link"
-                                >
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        </button>
-                      }
-                    />
+                      type="button"
+                      onClick={() => navigate(`/calendar/${it.id}`)}
+                      className="w-full text-left rounded border border-border bg-card/60 p-2 text-xs hover:bg-secondary/60 transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <StatusBadge value={it.status} className="text-[10px]" />
+                        <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground font-mono">
+                          <Clock className="h-2.5 w-2.5" />{suggestedPostTime(it.platform)}
+                        </span>
+                      </div>
+                      <div className="mt-1 line-clamp-2 leading-snug">{it.content}</div>
+                      <div className="flex items-center justify-between mt-1 gap-1">
+                        <div className="text-[10px] text-muted-foreground truncate">{it.channel ?? '—'} · {it.platform ?? '—'}</div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {channelLink && (
+                            <a
+                              href={channelLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              className="text-muted-foreground hover:text-primary"
+                              title={`Open ${it.platform}`}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                          {it.posted_link && (
+                            <a
+                              href={it.posted_link}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              className="text-primary"
+                              title="Open posted link"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </button>
                   );
                 })}
               </div>
