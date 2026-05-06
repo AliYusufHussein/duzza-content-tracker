@@ -473,16 +473,7 @@ export default function CalendarPage() {
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => sendBackToPipeline(r)} title="Send back to pipeline">
                         <Undo2 className="h-3.5 w-3.5 text-muted-foreground" />
                       </Button>
-                      <RecordDialog
-                        title="Edit scheduled post"
-                        fields={fields}
-                        initial={r}
-                        onSubmit={(v) => update(r.id, v)}
-                        submitLabel="Save changes"
-                        trigger={
-                          <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></Button>
-                        }
-                      />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Open" onClick={() => navigate(`/calendar/${r.id}`)}><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></Button>
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(r.id)} title="Delete"><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></Button>
                     </div>
                   </td>
