@@ -144,6 +144,26 @@ export default function PipelinePage() {
     if (error) toast.error(error.message); else { toast.success('Added to pipeline'); refresh(); }
   };
 
+  const fireApprovedWebhook = async (row: any) => {
+    try {
+      await fetch('https://eo5qcro6f5kcnwq.m.pipedream.net', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idea_id: row.id,
+          idea: row.idea ?? null,
+          channel: row.channel ?? null,
+          category: row.pillar ?? null,
+          content_type: row.format ?? null,
+          hook: row.hook ?? null,
+          status: 'Approved',
+        }),
+      });
+    } catch (e) {
+      console.error('Approved webhook failed', e);
+    }
+  };
+
   const updateStatus = async (id: string, newStatus: string) => {
     if (newStatus === 'Scheduled') {
       const row = rows.find(r => r.id === id);
@@ -152,8 +172,13 @@ export default function PipelinePage() {
         return;
       }
     }
+    const prev = rows.find(r => r.id === id);
     const { error } = await supabase.from('pipeline').update({ status: newStatus }).eq('id', id);
-    if (error) toast.error(error.message); else refresh();
+    if (error) { toast.error(error.message); return; }
+    if (newStatus === 'Approved' && prev?.status !== 'Approved') {
+      fireApprovedWebhook({ ...prev, id, status: newStatus });
+    }
+    refresh();
   };
 
   const confirmSchedule = async () => {
@@ -177,8 +202,14 @@ export default function PipelinePage() {
   };
 
   const update = async (id: string, v: any) => {
+    const prev = rows.find(r => r.id === id);
     const { error } = await supabase.from('pipeline').update(v).eq('id', id);
-    if (error) toast.error(error.message); else { toast.success('Updated'); refresh(); }
+    if (error) { toast.error(error.message); return; }
+    if (v?.status === 'Approved' && prev?.status !== 'Approved') {
+      fireApprovedWebhook({ ...prev, ...v, id });
+    }
+    toast.success('Updated');
+    refresh();
   };
 
   const remove = async (id: string) => {
