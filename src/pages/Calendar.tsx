@@ -46,6 +46,7 @@ function parseCSV(text: string): Record<string, string>[] {
 }
 
 export default function CalendarPage() {
+  const navigate = useNavigate();
   const { rows, refresh } = useTable<any>('calendar', 'date', true);
   const { rows: channels } = useTable<any>('channels');
   const [filterChannel, setFilterChannel] = useState<string>(() => {
