@@ -202,8 +202,14 @@ export default function PipelinePage() {
   };
 
   const update = async (id: string, v: any) => {
+    const prev = rows.find(r => r.id === id);
     const { error } = await supabase.from('pipeline').update(v).eq('id', id);
-    if (error) toast.error(error.message); else { toast.success('Updated'); refresh(); }
+    if (error) { toast.error(error.message); return; }
+    if (v?.status === 'Approved' && prev?.status !== 'Approved') {
+      fireApprovedWebhook({ ...prev, ...v, id });
+    }
+    toast.success('Updated');
+    refresh();
   };
 
   const remove = async (id: string) => {
