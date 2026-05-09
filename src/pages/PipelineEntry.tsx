@@ -53,7 +53,10 @@ export default function PipelineEntry() {
 
   const handleSave = async () => {
     const ok = await save();
-    if (ok) toast.success('Saved');
+    if (!ok) return;
+    const { data } = await supabase.from('pipeline').select('*').eq('id', id!).maybeSingle();
+    if (data) setRow(data);
+    toast.success('Saved ✓');
   };
 
   const pushToCalendar = async () => {
