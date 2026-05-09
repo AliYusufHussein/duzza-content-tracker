@@ -9,6 +9,7 @@ import AppLayout from "./components/AppLayout";
 import AuthPage from "./pages/Auth";
 import Today from "./pages/Today";
 import Pipeline from "./pages/Pipeline";
+import PipelineEntry from "./pages/PipelineEntry";
 import Calendar from "./pages/Calendar";
 import CalendarEntry from "./pages/CalendarEntry";
 import Channels from "./pages/Channels";
@@ -29,6 +30,7 @@ const App = () => (
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Today />} />
                 <Route path="/pipeline" element={<Pipeline />} />
+                <Route path="/pipeline/:id" element={<PipelineEntry />} />
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/calendar/:id" element={<CalendarEntry />} />
                 <Route path="/channels" element={<Channels />} />

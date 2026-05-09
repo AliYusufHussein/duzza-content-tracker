@@ -112,7 +112,7 @@ export default function TodayPage() {
                   {p.date ?? '—'} · received {p.created_at ? formatDistanceToNow(new Date(p.created_at), { addSuffix: true }) : ''}
                 </div>
                 <div className="flex gap-2 mt-1">
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => navigate('/pipeline')}>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => navigate(`/pipeline/${p.id}`)}>
                     Open
                   </Button>
                   <Button size="sm" className="h-7 text-xs" onClick={() => pushToCalendar(p)}>
