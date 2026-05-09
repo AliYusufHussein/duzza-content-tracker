@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { format } from 'date-fns';
+import { useEffect, useMemo, useState } from 'react';
+import { format, formatDistanceToNow } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useTable } from '@/hooks/useTable';
 import { PageHeader } from '@/components/PageHeader';
@@ -7,6 +8,9 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ExternalLink, CheckCircle2, Inbox, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
