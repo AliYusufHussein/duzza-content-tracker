@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { format } from 'date-fns';
+import { useEffect, useMemo, useState } from 'react';
+import { format, formatDistanceToNow } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useTable } from '@/hooks/useTable';
 import { PageHeader } from '@/components/PageHeader';
@@ -7,16 +8,67 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ExternalLink, CheckCircle2, Inbox, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
 const STATUSES = ['Planned', 'Drafting', 'Scheduled', 'Posted', 'Skipped'];
 
 export default function TodayPage() {
+  const navigate = useNavigate();
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayLabel = format(new Date(), 'EEEE, MMMM d');
   const { rows: calendar, refresh } = useTable<any>('calendar', 'date', true);
   const { rows: channels } = useTable<any>('channels');
+
+  // From Polisher inbox
+  const [polisher, setPolisher] = useState<any[]>([]);
+  const [scheduling, setScheduling] = useState<{ row: any; date: string } | null>(null);
+
+  const loadPolisher = async () => {
+    const { data, error } = await supabase
+      .from('pipeline')
+      .select('*')
+      .eq('notes', 'From Polisher')
+      .eq('status', 'Drafting')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (error) { console.error(error); return; }
+    setPolisher(data ?? []);
+  };
+
+  useEffect(() => {
+    loadPolisher();
+    const id = setInterval(loadPolisher, 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  const pushToCalendar = (row: any) => {
+    setScheduling({ row, date: row.date || format(new Date(), 'yyyy-MM-dd') });
+  };
+
+  const confirmSchedule = async () => {
+    if (!scheduling) return;
+    const { row, date } = scheduling;
+    if (!date) { toast.error('Pick a date'); return; }
+    const { error: insErr } = await supabase.from('calendar').insert({
+      date,
+      channel: row.channel ?? null,
+      platform: row.platform ?? null,
+      content: [row.idea, row.hook ? `Hook: ${row.hook}` : null].filter(Boolean).join('\n\n'),
+      status: 'Scheduled',
+      notes: row.notes ?? null,
+    });
+    if (insErr) { toast.error(insErr.message); return; }
+    const { error: updErr } = await supabase.from('pipeline').update({ status: 'Scheduled' }).eq('id', row.id);
+    if (updErr) { toast.error(updErr.message); return; }
+    toast.success('Pushed to calendar');
+    setScheduling(null);
+    loadPolisher();
+    refresh();
+  };
 
   const todays = useMemo(() => calendar.filter(c => c.date === today), [calendar, today]);
 
@@ -43,6 +95,35 @@ export default function TodayPage() {
         title="Today's Posts"
         subtitle={`${todayLabel} · ${todays.length} scheduled item${todays.length !== 1 ? 's' : ''}`}
       />
+
+      {polisher.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-sm font-semibold tracking-tight mb-3">📥 Received from Polisher</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {polisher.map(p => (
+              <Card key={p.id} className="surface-card p-4 flex flex-col gap-2">
+                <div className="font-medium text-sm leading-snug">
+                  {(p.idea ?? '').length > 80 ? (p.idea ?? '').slice(0, 80) + '…' : p.idea}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {(p.channel ?? '—')} · {(p.platform ?? '—')}
+                </div>
+                <div className="text-[11px] text-muted-foreground font-mono">
+                  {p.date ?? '—'} · received {p.created_at ? formatDistanceToNow(new Date(p.created_at), { addSuffix: true }) : ''}
+                </div>
+                <div className="flex gap-2 mt-1">
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => navigate('/pipeline')}>
+                    Open
+                  </Button>
+                  <Button size="sm" className="h-7 text-xs" onClick={() => pushToCalendar(p)}>
+                    Push to Calendar
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       {grouped.length === 0 && (
         <Card className="p-12 surface-card text-center">
@@ -127,6 +208,25 @@ export default function TodayPage() {
           </Card>
         ))}
       </div>
+
+      <Dialog open={!!scheduling} onOpenChange={o => !o && setScheduling(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Schedule on calendar</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="schedule-date">Date</Label>
+            <Input
+              id="schedule-date"
+              type="date"
+              value={scheduling?.date ?? ''}
+              onChange={e => setScheduling(s => s ? { ...s, date: e.target.value } : s)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduling(null)}>Cancel</Button>
+            <Button onClick={confirmSchedule}>Schedule</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
