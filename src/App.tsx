@@ -9,6 +9,7 @@ import AppLayout from "./components/AppLayout";
 import AuthPage from "./pages/Auth";
 import Today from "./pages/Today";
 import Pipeline from "./pages/Pipeline";
+import PipelineEntry from "./pages/PipelineEntry";
 import Calendar from "./pages/Calendar";
 import CalendarEntry from "./pages/CalendarEntry";
 import Channels from "./pages/Channels";
