@@ -17,10 +17,58 @@ import { toast } from 'sonner';
 const STATUSES = ['Planned', 'Drafting', 'Scheduled', 'Posted', 'Skipped'];
 
 export default function TodayPage() {
+  const navigate = useNavigate();
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayLabel = format(new Date(), 'EEEE, MMMM d');
   const { rows: calendar, refresh } = useTable<any>('calendar', 'date', true);
   const { rows: channels } = useTable<any>('channels');
+
+  // From Polisher inbox
+  const [polisher, setPolisher] = useState<any[]>([]);
+  const [scheduling, setScheduling] = useState<{ row: any; date: string } | null>(null);
+
+  const loadPolisher = async () => {
+    const { data, error } = await supabase
+      .from('pipeline')
+      .select('*')
+      .eq('notes', 'From Polisher')
+      .eq('status', 'Drafting')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (error) { console.error(error); return; }
+    setPolisher(data ?? []);
+  };
+
+  useEffect(() => {
+    loadPolisher();
+    const id = setInterval(loadPolisher, 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  const pushToCalendar = (row: any) => {
+    setScheduling({ row, date: row.date || format(new Date(), 'yyyy-MM-dd') });
+  };
+
+  const confirmSchedule = async () => {
+    if (!scheduling) return;
+    const { row, date } = scheduling;
+    if (!date) { toast.error('Pick a date'); return; }
+    const { error: insErr } = await supabase.from('calendar').insert({
+      date,
+      channel: row.channel ?? null,
+      platform: row.platform ?? null,
+      content: [row.idea, row.hook ? `Hook: ${row.hook}` : null].filter(Boolean).join('\n\n'),
+      status: 'Scheduled',
+      notes: row.notes ?? null,
+    });
+    if (insErr) { toast.error(insErr.message); return; }
+    const { error: updErr } = await supabase.from('pipeline').update({ status: 'Scheduled' }).eq('id', row.id);
+    if (updErr) { toast.error(updErr.message); return; }
+    toast.success('Pushed to calendar');
+    setScheduling(null);
+    loadPolisher();
+    refresh();
+  };
 
   const todays = useMemo(() => calendar.filter(c => c.date === today), [calendar, today]);
 
