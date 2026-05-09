@@ -96,6 +96,35 @@ export default function TodayPage() {
         subtitle={`${todayLabel} · ${todays.length} scheduled item${todays.length !== 1 ? 's' : ''}`}
       />
 
+      {polisher.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-sm font-semibold tracking-tight mb-3">📥 Received from Polisher</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {polisher.map(p => (
+              <Card key={p.id} className="surface-card p-4 flex flex-col gap-2">
+                <div className="font-medium text-sm leading-snug">
+                  {(p.idea ?? '').length > 80 ? (p.idea ?? '').slice(0, 80) + '…' : p.idea}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {(p.channel ?? '—')} · {(p.platform ?? '—')}
+                </div>
+                <div className="text-[11px] text-muted-foreground font-mono">
+                  {p.date ?? '—'} · received {p.created_at ? formatDistanceToNow(new Date(p.created_at), { addSuffix: true }) : ''}
+                </div>
+                <div className="flex gap-2 mt-1">
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => navigate('/pipeline')}>
+                    Open
+                  </Button>
+                  <Button size="sm" className="h-7 text-xs" onClick={() => pushToCalendar(p)}>
+                    Push to Calendar
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
       {grouped.length === 0 && (
         <Card className="p-12 surface-card text-center">
           <Inbox className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
