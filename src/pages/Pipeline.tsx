@@ -20,21 +20,11 @@ type Pipeline = any;
 export default function PipelinePage() {
   const { rows, refresh } = useTable<Pipeline>('pipeline', 'date', false);
   const { rows: channels } = useTable<any>('channels');
-  const [q, setQ] = useState(() => {
-    try { return sessionStorage.getItem('pipeline:q') ?? ''; } catch { return ''; }
-  });
-  const [status, setStatus] = useState<string>(() => {
-    try { return sessionStorage.getItem('pipeline:status') ?? 'all'; } catch { return 'all'; }
-  });
-  const [channelFilter, setChannelFilter] = useState<string>(() => {
-    try { return sessionStorage.getItem('pipeline:channelFilter') ?? 'all'; } catch { return 'all'; }
-  });
-  const [platformFilter, setPlatformFilter] = useState<string>(() => {
-    try { return sessionStorage.getItem('pipeline:platformFilter') ?? 'all'; } catch { return 'all'; }
-  });
-  const [rangeWeeks, setRangeWeeks] = useState<string>(() => {
-    try { return sessionStorage.getItem('pipeline:rangeWeeks') ?? 'all'; } catch { return 'all'; }
-  });
+  const [q, setQ] = useState('');
+  const [status, setStatus] = useState<string>('all');
+  const [channelFilter, setChannelFilter] = useState<string>('all');
+  const [platformFilter, setPlatformFilter] = useState<string>('all');
+  const [rangeWeeks, setRangeWeeks] = useState<string>('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     try {
