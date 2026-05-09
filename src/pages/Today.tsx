@@ -208,6 +208,25 @@ export default function TodayPage() {
           </Card>
         ))}
       </div>
+
+      <Dialog open={!!scheduling} onOpenChange={o => !o && setScheduling(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Schedule on calendar</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="schedule-date">Date</Label>
+            <Input
+              id="schedule-date"
+              type="date"
+              value={scheduling?.date ?? ''}
+              onChange={e => setScheduling(s => s ? { ...s, date: e.target.value } : s)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduling(null)}>Cancel</Button>
+            <Button onClick={confirmSchedule}>Schedule</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
