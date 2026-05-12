@@ -109,7 +109,7 @@ export default function TodayPage() {
             {polisher.map(p => (
               <Card key={p.id} className="surface-card p-4 flex flex-col gap-2">
                 <div className="font-medium text-sm leading-snug">
-                  {(p.idea ?? '').length > 80 ? (p.idea ?? '').slice(0, 80) + '…' : p.idea}
+                  {p.title ?? (p.content ?? '').slice(0, 100)}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
                   {(p.channel ?? '—')} · {(p.platform ?? '—')}
@@ -118,11 +118,8 @@ export default function TodayPage() {
                   {p.date ?? '—'} · received {p.created_at ? formatDistanceToNow(new Date(p.created_at), { addSuffix: true }) : ''}
                 </div>
                 <div className="flex gap-2 mt-1">
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => navigate(`/pipeline/${p.id}`)}>
-                    Open
-                  </Button>
-                  <Button size="sm" className="h-7 text-xs" onClick={() => pushToCalendar(p)}>
-                    Push to Calendar
+                  <Button size="sm" className="h-7 text-xs" onClick={() => setViewing({ ...p })}>
+                    View & Send
                   </Button>
                 </div>
               </Card>
