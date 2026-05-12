@@ -1,40 +1,54 @@
-# Plan: Update receive-from-polisher edge function
+## Pipeline cleanup plan
 
-## Changes to `supabase/functions/receive-from-polisher/index.ts`
+Current pipeline: **702 rows** (April 2026 → January 2027). The volume is a real cause of slowness — every Pipeline page render loads all rows and groups/sorts them client-side.
 
-### 1. Make `date` validation conditional
+### What I'll do
 
-Replace the current combined check:
+**Step 1 — Date cutoff**
+Delete every pipeline row with `date > 2026-08-31`.
+- Removes **195 rows** (Sep 2026 → Jan 2027, ~39/month).
 
-```ts
-if (!content || !date) { ... 'content and date are required' ... }
+**Step 2 — Deduplicate**
+Within the remaining rows, treat two rows as duplicates when they share the same `idea` + `channel` + `platform`. Different platform = kept (per your note). Date is ignored, so repeats across multiple days collapse into one. Keep the **oldest** row in each group (preserves any edits/status changes made on the original).
+- Removes **334 extra rows** across **167 duplicate groups**.
+
+**Final state:** ~173 rows (down from 702, ~75% reduction).
+
+### Safety
+
+- I'll run both deletes inside a single transaction so it's all-or-nothing.
+- "Keep oldest" uses `created_at ASC` — if a duplicate has been advanced to `Approved`/`Polishing`/`Scheduled`/`Posted`, that progress could be lost. Posted items dated after Aug 31 would also be deleted by Step 1. **Tell me if you want me to protect non-`Idea`/`Drafting` rows from deletion** — otherwise I proceed as above.
+- No schema changes. Data-only. Backed by a single SQL transaction via the insert tool.
+
+### Technical detail
+
+```sql
+BEGIN;
+
+-- Step 1
+DELETE FROM pipeline WHERE date > '2026-08-31';
+
+-- Step 2
+DELETE FROM pipeline p
+USING (
+  SELECT id FROM (
+    SELECT id, row_number() OVER (
+      PARTITION BY idea, channel, platform
+      ORDER BY created_at ASC
+    ) rn
+    FROM pipeline
+  ) t WHERE rn > 1
+) d
+WHERE p.id = d.id;
+
+COMMIT;
 ```
 
-With two checks:
+### My thoughts (you asked)
 
-- `content` is always required.
-- `date` is only required when `pipeline_id` is NOT provided (i.e., the INSERT branch).
+Cleanup is the right move, but it only treats the symptom. Even at 173 rows the Pipeline page still fetches everything and does grouping/sorting in JS. After cleanup I'd recommend (separate task, your call):
+1. Server-side filter by date range (default: next 8 weeks) so the page never loads 700+ rows again.
+2. Pagination or virtualized rows for the table.
+3. A scheduled job that auto-archives `Posted` items older than 60 days.
 
-### 2. Expand the UPDATE branch fields
-
-In the `if (pipeline_id) { ... }` branch, change the `.update({...})` payload to also persist `channel`, `platform`, and `date` so they don't get lost on incoming polisher updates:
-
-```ts
-.update({
-  hook: contentStr.slice(0, 280),
-  status: 'Polishing',
-  notes: 'From Polisher',
-  channel: channel ?? null,
-  platform: platform ?? null,
-  date: date,
-})
-```
-
-Note: when `pipeline_id` is provided without `date`, `date` will be `undefined` and the column will simply not be overwritten by Supabase's update (undefined values are stripped). Existing date stays intact.
-
-### 3. Everything else unchanged
-
-- CORS, JWT bypass, method check, error handling, response shape all stay as-is.
-- INSERT branch unchanged.
-- `polisher_queue` "mark done" best-effort logic unchanged.
-- Returns `{ success: true, pipeline_id: <id> }` in both branches.
+Reply **"go"** to run the cleanup, or tell me to protect advanced-status rows first.
