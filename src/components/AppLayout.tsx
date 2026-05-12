@@ -20,9 +20,11 @@ export default function AppLayout() {
   const current = nav.find(n => n.end ? loc.pathname === n.to : loc.pathname.startsWith(n.to));
   const { rows: calendar } = useTable<any>('calendar', 'date', true);
   const { rows: pipeline } = useTable<any>('pipeline', 'date', false);
+  const { rows: inbox } = useTable<any>('inbox', 'created_at', false);
   const today = format(new Date(), 'yyyy-MM-dd');
   const counts: Record<string, number> = {
     today: calendar.filter(c => c.date === today && c.status !== 'Posted').length,
+    inbox: inbox.filter(i => i.status === 'pending').length,
     pipeline: pipeline.length,
     calendar: calendar.filter(c => c.status === 'Scheduled').length,
     channels: 0,
