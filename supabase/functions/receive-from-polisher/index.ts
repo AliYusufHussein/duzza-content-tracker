@@ -20,17 +20,10 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { pipeline_id, article_id, channel, platform, content, date } = body ?? {};
+    const { channel, platform, content, date } = body ?? {};
 
     if (!content) {
       return new Response(JSON.stringify({ error: 'content is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (!pipeline_id && !date) {
-      return new Response(JSON.stringify({ error: 'date is required when pipeline_id is not provided' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -42,70 +35,29 @@ Deno.serve(async (req) => {
     );
 
     const contentStr = String(content);
-    let resultId: string;
 
-    if (pipeline_id) {
-      const { data, error } = await supabase
-        .from('pipeline')
-        .update({
-          hook: contentStr.slice(0, 280),
-          status: 'Polishing',
-          notes: 'From Polisher',
-          channel: channel ?? null,
-          platform: platform ?? null,
-          date: date,
-        })
-        .eq('id', pipeline_id)
-        .select('id')
-        .single();
+    const { data, error } = await supabase
+      .from('inbox')
+      .insert({
+        title: contentStr.slice(0, 100),
+        content: contentStr,
+        channel: channel ?? null,
+        platform: platform ?? null,
+        date: date ?? null,
+        source: 'polisher',
+        status: 'pending',
+      })
+      .select('id')
+      .single();
 
-      if (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      resultId = data.id;
-    } else {
-      const { data, error } = await supabase
-        .from('pipeline')
-        .insert({
-          idea: contentStr.slice(0, 500),
-          channel: channel ?? null,
-          platform: platform ?? null,
-          hook: contentStr.slice(0, 280),
-          date,
-          status: 'Drafting',
-          notes: 'From Polisher',
-        })
-        .select('id')
-        .single();
-
-      if (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      resultId = data.id;
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Best-effort: mark polisher_queue entry done
-    if (pipeline_id || article_id) {
-      try {
-        const q = supabase.from('polisher_queue').update({
-          status: 'done',
-          ...(article_id ? { article_id: String(article_id) } : {}),
-        });
-        if (article_id) {
-          await q.eq('article_id', String(article_id));
-        } else if (pipeline_id) {
-          await q.eq('pipeline_id', pipeline_id);
-        }
-      } catch (_) { /* ignore */ }
-    }
-
-    return new Response(JSON.stringify({ success: true, pipeline_id: resultId }), {
+    return new Response(JSON.stringify({ success: true, inbox_id: data.id }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
