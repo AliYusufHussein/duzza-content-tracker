@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Workflow, Calendar, Radio, Sun, LogOut } from 'lucide-react';
+import { Workflow, Calendar, Radio, Sun, LogOut, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 
 const nav = [
   { to: '/', label: 'Today', icon: Sun, end: true, key: 'today' as const },
+  { to: '/inbox', label: 'Inbox', icon: Mail, end: false, key: 'inbox' as const },
   { to: '/pipeline', label: 'Pipeline', icon: Workflow, key: 'pipeline' as const },
   { to: '/calendar', label: 'Calendar', icon: Calendar, key: 'calendar' as const },
   { to: '/channels', label: 'Channels', icon: Radio, key: 'channels' as const },
