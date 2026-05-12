@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { ExternalLink, CheckCircle2, Inbox, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,16 +24,16 @@ export default function TodayPage() {
   const { rows: calendar, refresh } = useTable<any>('calendar', 'date', true);
   const { rows: channels } = useTable<any>('channels');
 
-  // From Polisher inbox
+  // Inbox from Polisher
   const [polisher, setPolisher] = useState<any[]>([]);
-  const [scheduling, setScheduling] = useState<{ row: any; date: string } | null>(null);
+  const [viewing, setViewing] = useState<any | null>(null);
+  const [sending, setSending] = useState(false);
 
   const loadPolisher = async () => {
     const { data, error } = await supabase
-      .from('pipeline')
+      .from('inbox')
       .select('*')
-      .eq('notes', 'From Polisher')
-      .eq('status', 'Drafting')
+      .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(10);
     if (error) { console.error(error); return; }
@@ -45,29 +46,34 @@ export default function TodayPage() {
     return () => clearInterval(id);
   }, []);
 
-  const pushToCalendar = (row: any) => {
-    setScheduling({ row, date: row.date || format(new Date(), 'yyyy-MM-dd') });
+  const sendToPipeline = async () => {
+    if (!viewing) return;
+    setSending(true);
+    const content = viewing.content ?? '';
+    const { error: insErr } = await supabase.from('pipeline').insert({
+      idea: viewing.title ?? content.slice(0, 100),
+      hook: content.slice(0, 280),
+      channel: viewing.channel ?? null,
+      platform: viewing.platform ?? null,
+      date: viewing.date ?? format(new Date(), 'yyyy-MM-dd'),
+      status: 'Polishing',
+      notes: 'From Polisher',
+    });
+    if (insErr) { setSending(false); toast.error(insErr.message); return; }
+    const { error: updErr } = await supabase.from('inbox').update({ status: 'sent' }).eq('id', viewing.id);
+    setSending(false);
+    if (updErr) { toast.error(updErr.message); return; }
+    toast.success('Added to Pipeline ✓');
+    setViewing(null);
+    loadPolisher();
   };
 
-  const confirmSchedule = async () => {
-    if (!scheduling) return;
-    const { row, date } = scheduling;
-    if (!date) { toast.error('Pick a date'); return; }
-    const { error: insErr } = await supabase.from('calendar').insert({
-      date,
-      channel: row.channel ?? null,
-      platform: row.platform ?? null,
-      content: [row.idea, row.hook ? `Hook: ${row.hook}` : null].filter(Boolean).join('\n\n'),
-      status: 'Scheduled',
-      notes: row.notes ?? null,
-    });
-    if (insErr) { toast.error(insErr.message); return; }
-    const { error: updErr } = await supabase.from('pipeline').update({ status: 'Scheduled' }).eq('id', row.id);
-    if (updErr) { toast.error(updErr.message); return; }
-    toast.success('Pushed to calendar');
-    setScheduling(null);
+  const dismissInbox = async () => {
+    if (!viewing) return;
+    const { error } = await supabase.from('inbox').update({ status: 'dismissed' }).eq('id', viewing.id);
+    if (error) { toast.error(error.message); return; }
+    setViewing(null);
     loadPolisher();
-    refresh();
   };
 
   const todays = useMemo(() => calendar.filter(c => c.date === today), [calendar, today]);
@@ -103,7 +109,7 @@ export default function TodayPage() {
             {polisher.map(p => (
               <Card key={p.id} className="surface-card p-4 flex flex-col gap-2">
                 <div className="font-medium text-sm leading-snug">
-                  {(p.idea ?? '').length > 80 ? (p.idea ?? '').slice(0, 80) + '…' : p.idea}
+                  {p.title ?? (p.content ?? '').slice(0, 100)}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
                   {(p.channel ?? '—')} · {(p.platform ?? '—')}
@@ -112,11 +118,8 @@ export default function TodayPage() {
                   {p.date ?? '—'} · received {p.created_at ? formatDistanceToNow(new Date(p.created_at), { addSuffix: true }) : ''}
                 </div>
                 <div className="flex gap-2 mt-1">
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => navigate(`/pipeline/${p.id}`)}>
-                    Open
-                  </Button>
-                  <Button size="sm" className="h-7 text-xs" onClick={() => pushToCalendar(p)}>
-                    Push to Calendar
+                  <Button size="sm" className="h-7 text-xs" onClick={() => setViewing({ ...p })}>
+                    View & Send
                   </Button>
                 </div>
               </Card>
@@ -209,21 +212,37 @@ export default function TodayPage() {
         ))}
       </div>
 
-      <Dialog open={!!scheduling} onOpenChange={o => !o && setScheduling(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Schedule on calendar</DialogTitle></DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="schedule-date">Date</Label>
-            <Input
-              id="schedule-date"
-              type="date"
-              value={scheduling?.date ?? ''}
-              onChange={e => setScheduling(s => s ? { ...s, date: e.target.value } : s)}
-            />
+      <Dialog open={!!viewing} onOpenChange={o => !o && setViewing(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-base">{viewing?.title ?? 'Inbox item'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Content</Label>
+              <Textarea readOnly value={viewing?.content ?? ''} className="min-h-[200px] font-mono text-xs" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="v-channel">Channel</Label>
+                <Input id="v-channel" value={viewing?.channel ?? ''}
+                  onChange={e => setViewing((v: any) => ({ ...v, channel: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="v-platform">Platform</Label>
+                <Input id="v-platform" value={viewing?.platform ?? ''}
+                  onChange={e => setViewing((v: any) => ({ ...v, platform: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="v-date">Date</Label>
+              <Input id="v-date" type="date" value={viewing?.date ?? ''}
+                onChange={e => setViewing((v: any) => ({ ...v, date: e.target.value }))} />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setScheduling(null)}>Cancel</Button>
-            <Button onClick={confirmSchedule}>Schedule</Button>
+            <Button variant="outline" onClick={dismissInbox}>Dismiss</Button>
+            <Button onClick={sendToPipeline} disabled={sending}>Send to Pipeline</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
