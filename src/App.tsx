@@ -13,6 +13,7 @@ import PipelineEntry from "./pages/PipelineEntry";
 import Calendar from "./pages/Calendar";
 import CalendarEntry from "./pages/CalendarEntry";
 import Channels from "./pages/Channels";
+import Inbox from "./pages/Inbox";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
