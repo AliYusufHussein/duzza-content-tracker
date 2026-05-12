@@ -98,6 +98,45 @@ export type Database = {
         }
         Relationships: []
       }
+      inbox: {
+        Row: {
+          channel: string | null
+          content: string | null
+          created_at: string
+          date: string | null
+          id: string
+          platform: string | null
+          source: string | null
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          channel?: string | null
+          content?: string | null
+          created_at?: string
+          date?: string | null
+          id?: string
+          platform?: string | null
+          source?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channel?: string | null
+          content?: string | null
+          created_at?: string
+          date?: string | null
+          id?: string
+          platform?: string | null
+          source?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pipeline: {
         Row: {
           channel: string | null
