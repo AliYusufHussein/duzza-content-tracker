@@ -30,6 +30,7 @@ const App = () => (
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Today />} />
+                <Route path="/inbox" element={<Inbox />} />
                 <Route path="/pipeline" element={<Pipeline />} />
                 <Route path="/pipeline/:id" element={<PipelineEntry />} />
                 <Route path="/calendar" element={<Calendar />} />
