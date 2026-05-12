@@ -212,21 +212,37 @@ export default function TodayPage() {
         ))}
       </div>
 
-      <Dialog open={!!scheduling} onOpenChange={o => !o && setScheduling(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Schedule on calendar</DialogTitle></DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="schedule-date">Date</Label>
-            <Input
-              id="schedule-date"
-              type="date"
-              value={scheduling?.date ?? ''}
-              onChange={e => setScheduling(s => s ? { ...s, date: e.target.value } : s)}
-            />
+      <Dialog open={!!viewing} onOpenChange={o => !o && setViewing(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-base">{viewing?.title ?? 'Inbox item'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Content</Label>
+              <Textarea readOnly value={viewing?.content ?? ''} className="min-h-[200px] font-mono text-xs" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="v-channel">Channel</Label>
+                <Input id="v-channel" value={viewing?.channel ?? ''}
+                  onChange={e => setViewing((v: any) => ({ ...v, channel: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="v-platform">Platform</Label>
+                <Input id="v-platform" value={viewing?.platform ?? ''}
+                  onChange={e => setViewing((v: any) => ({ ...v, platform: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="v-date">Date</Label>
+              <Input id="v-date" type="date" value={viewing?.date ?? ''}
+                onChange={e => setViewing((v: any) => ({ ...v, date: e.target.value }))} />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setScheduling(null)}>Cancel</Button>
-            <Button onClick={confirmSchedule}>Schedule</Button>
+            <Button variant="outline" onClick={dismissInbox}>Dismiss</Button>
+            <Button onClick={sendToPipeline} disabled={sending}>Send to Pipeline</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
