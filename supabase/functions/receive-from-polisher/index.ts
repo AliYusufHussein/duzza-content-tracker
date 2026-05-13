@@ -20,10 +20,10 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { channel, platform, content, date } = body ?? {};
+    const { title, content, channel, platform, date } = body ?? {};
 
-    if (!content) {
-      return new Response(JSON.stringify({ error: 'content is required' }), {
+    if (!title && !content) {
+      return new Response(JSON.stringify({ error: 'title or content is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -34,30 +34,49 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const contentStr = String(content);
+    const ideaSource = String(title ?? content ?? '');
+    const idea = ideaSource.slice(0, 100);
 
-    const { data, error } = await supabase
-      .from('inbox')
-      .insert({
-        title: contentStr.slice(0, 100),
-        content: contentStr,
-        channel: channel ?? null,
-        platform: platform ?? null,
-        date: date ?? null,
-        source: 'polisher',
-        status: 'pending',
-      })
+    const pipelineInsert: Record<string, unknown> = {
+      idea,
+      channel: channel ?? null,
+      platform: platform ?? null,
+      status: 'Polishing',
+      notes: 'From Polisher',
+    };
+    if (date) pipelineInsert.date = date;
+
+    const { data: pipelineRow, error: pipelineErr } = await supabase
+      .from('pipeline')
+      .insert(pipelineInsert)
       .select('id')
       .single();
 
-    if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
+    if (pipelineErr) {
+      return new Response(JSON.stringify({ error: pipelineErr.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(JSON.stringify({ success: true, inbox_id: data.id }), {
+    if (content) {
+      const { error: draftErr } = await supabase
+        .from('pipeline_drafts')
+        .insert({
+          pipeline_id: pipelineRow.id,
+          body: String(content),
+          source: 'polisher',
+        });
+
+      if (draftErr) {
+        return new Response(JSON.stringify({ error: draftErr.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, pipeline_id: pipelineRow.id }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
